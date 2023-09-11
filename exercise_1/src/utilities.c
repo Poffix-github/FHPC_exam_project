@@ -60,7 +60,7 @@ unsigned int easy_seed(char *string){
  */
     unsigned int seed=0;
     
-    for(int i=0; i<strlen(string); i++){
+    for(int i=(strlen(string)-1 > 10 ? 10 : strlen(string)-1); i>=0; i--){
         seed += string[i];
     }
     return seed;

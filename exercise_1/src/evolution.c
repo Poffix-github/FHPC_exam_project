@@ -1,10 +1,9 @@
 #include <gol.h>
 #include <stdio.h>
+#include <omp.h>
 
 /* ==================================================
  * These functions evolve the board.
- * 
- * Information about the board.
  * 
  * CELL NOMENCLATURE
  * 0:   dead
@@ -22,7 +21,7 @@
 
 /* Count the number of alive neighbours 
  */
-int check_neighbours(const void* board, const int dim, const int i, const int j){
+char check_neighbours(const void* board, const int dim, const int i, const int j){
     const int off_sets[MAX_NUMBER_OF_CELLS][2] = {  {-1, -1}, {-1, 0}, {-1, 1},
                                                      {0, -1},           {0, 1},
                                                      {1, -1},  {1, 0},  {1, 1}  };
@@ -66,7 +65,8 @@ void evolution_static(void* board, const int dim){
      * - save list of cells to modify;
      * - mark cells to be modified;
      * */
-
+    
+    #pragma omp parallel for collapse(2)
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             if(check_neighbours(board, dim, i, j) == 1){ /* cell will be or remain alive */
@@ -81,6 +81,7 @@ void evolution_static(void* board, const int dim){
         }
     }
     
+    #pragma omp parallel collapse(2)
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             if(*(((unsigned char*)board) + i*dim + j) == 127){

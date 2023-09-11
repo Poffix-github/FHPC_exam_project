@@ -1,4 +1,4 @@
-CC = cc
+CC = gcc
 
 INCDIR = include
 OBJDIR = obj

@@ -45,34 +45,22 @@ int main( int argc, char **argv )
         read_pgm_image( &board, &maxval, &size, &size, fname);
         
         switch( maxval ){
-            case -1:
-                printf("I/O error in header\n"); break;
-            case -2:
-                printf("Memory not sufficient\n"); break;
-            case -3:
-                printf("I/O error in body\n"); break;
+            case -1: printf("I/O error in header\n"); break;
+            case -2: printf("Memory not sufficient\n"); break;
+            case -3: printf("I/O error in body\n"); break;
             default:
                 /* swap endianism */
-                if ( LITTLE_ENDIAN ){
-                    swap_image( board, size, size, maxval);
-                }
+                if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
                 
                 printf("start evolution\n");
+                
                 for(int i=0; i<n; i++){
-                    if (i % 100 == 0){
-                    }
-                    if( e == ORDERED ){
-                        evolution_ordered(board, size);
-                    }else{
-                        printf("evolution step: %d\n", i);
-                        evolution_static(board, size);
-                    }
+                    if( e == ORDERED ) evolution_ordered(board, size);
+                    else evolution_static(board, size);
                     
                     if(i % s == 0){
                         /* swap endianism */
-                        if ( LITTLE_ENDIAN ){
-                            swap_image( board, size, size, maxval);
-                        }
+                        if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
                         
                         char *snapshot_name;
                         size_t name_size = 29*sizeof(char);
@@ -80,6 +68,9 @@ int main( int argc, char **argv )
                         snprintf(snapshot_name, name_size, "snapshots/snapshot_%05d.pgm", i);
                         
                         write_pgm_image( board, maxval, size, size, snapshot_name);
+                        
+                        /* swap endianism */
+                        if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
                     }
                 }
         }
