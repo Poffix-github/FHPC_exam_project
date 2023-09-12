@@ -58,7 +58,7 @@ void evolution_ordered(void* board, const int dim, const int steps, const int ma
             }
         }
         if(s % save == 0){
-            save_snap(board, dim, maxval);
+            save_snap(board, dim, maxval, s);
         }
     }
 }
@@ -100,7 +100,7 @@ void evolution_static(void* board, const int dim, const int steps, const int max
         }
 
         if(s % save == 0){
-            save_snap(board, dim, maxval);
+            save_snap(board, dim, maxval, s);
         }
     }
 }

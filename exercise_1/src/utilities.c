@@ -85,14 +85,14 @@ void *random_board(const int size, char *string){
     return (void*) board;
 }
 
-void save_snap(void* board, int size, int maxval){
+void save_snap(void* board, const int size, const int maxval, const int num){
     /* swap endianism */
     if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
                         
     char *snapshot_name;
     size_t name_size = 29*sizeof(char);
     snapshot_name = (char *)malloc(name_size);
-    snprintf(snapshot_name, name_size, "snapshots/snapshot_%05d.pgm", i);
+    snprintf(snapshot_name, name_size, "snapshots/snapshot_%05d.pgm", num);
                         
     write_pgm_image( board, maxval, size, size, snapshot_name);
                         
