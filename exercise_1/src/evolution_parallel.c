@@ -22,7 +22,7 @@
 
 /* Count the number of alive neighbours 
  */
-char check_neighbours(const void* board, const int dim, const int i, const int j){
+char check_neighbours(const void* board, const int DIM, const int i, const int j){
     const int off_sets[MAX_NUMBER_OF_CELLS][2] = {  {-1, -1}, {-1, 0}, {-1, 1},
                                                      {0, -1},           {0, 1},
                                                      {1, -1},  {1, 0},  {1, 1}  };
@@ -30,10 +30,10 @@ char check_neighbours(const void* board, const int dim, const int i, const int j
     
     for(int z=0; z<MAX_NUMBER_OF_CELLS; z++){
         /* compute coordinates couple */
-        int k = i + off_sets[z][0] < 0 ? dim-1 : (i + off_sets[z][0]) % dim;
-        int l = j + off_sets[z][1] < 0 ? dim-1 : (j + off_sets[z][1]) % dim;
+        int k = i + off_sets[z][0] < 0 ? DIM-1 : (i + off_sets[z][0]) % DIM;
+        int l = j + off_sets[z][1] < 0 ? DIM-1 : (j + off_sets[z][1]) % DIM;
         
-        if( ((unsigned char*)board)[k*dim + l] >= 128 ){
+        if( ((unsigned char*)board)[k*DIM + l] >= 128 ){
             count++;
         }
     }
@@ -46,20 +46,20 @@ char check_neighbours(const void* board, const int dim, const int i, const int j
 /* Evolves the whole board once. 
  * The evolution is ordered, meaning by row and from the top left cell.
  */
-void evolution_ordered(void* board, const int dim, const int steps, const int maxval, const int save){
+void evolution_ordered(void* board, const int DIM, const int STEPS, const int maxval, const int SAVE){
     #pragma omp parallel for collapse(3)
-    for(int s=0; s<steps; s++){
-        for(int i=0; i<dim; i++){
-            for(int j=0; j<dim; j++){
-                if(check_neighbours(board, dim, i, j) == 1){
-                    *(((unsigned short int*)board) + i*dim + j) = 255; /* board[i][j] = true, the cell is alive */
+    for(int s=0; s<STEPS; s++){
+        for(int i=0; i<DIM; i++){
+            for(int j=0; j<DIM; j++){
+                if(check_neighbours(board, DIM, i, j) == 1){
+                    *(((unsigned short int*)board) + i*DIM + j) = 255; /* board[i][j] = true, the cell is alive */
                 }else{
-                    *(((unsigned short int*)board) + i*dim + j) = 0; /* board[i][j] = false, the cell is dead */
+                    *(((unsigned short int*)board) + i*DIM + j) = 0; /* board[i][j] = false, the cell is dead */
                 }
             }
         }
-        if(s % save == 0){
-            save_snap(board, dim, maxval, s);
+        if(s % SAVE == 0){
+            save_snap(board, DIM, maxval, s);
         }
     }
 }
@@ -67,52 +67,87 @@ void evolution_ordered(void* board, const int dim, const int steps, const int ma
 /* Evolves the whole board once. 
  * The evolution is static, meaning the evaluation of the board is disentangled from the update. 
  */
-void evolution_static(void* board, const int dim, const int steps, const int maxval, const int save){
+void evolution_static(void* board, const int DIM, const int STEPS, const int maxval, const int SAVE){
     /* Options:
      * - save list of cells to modify;
      * - mark cells to be modified;
      * */
     
-    int size, rank;
+    int c_size, rank;
 
     MPI_Init(NULL,NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(MPI_COMM_WORLD, &c_size);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
     /* partition grid into blocks and scatter them through the processes*/
-    
+    const int NDEC = 5; /* number of blocks in a coloumn in decomposition */
+    const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
+
+    if(c_size != NDEC*NDEC){
+        fprintf(stderr,"Error: number of PEs %d != %d x %d\n", c_size, NDEC, NDEC);
+        MPI_Finalize();
+        exit(-1);
+    }
+
+    char chunk[BLOCKSIZE*BLOCKSIZE];
+    for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) chunk[ii] = 0;
+
+    MPI_Datatype blocktype;
+    MPI_Datatype blocktype2;
+
+    MPI_Type_vector(BLOCKSIZE, BLOCKSIZE, DIM, MPI_CHAR, &blocktype2);
+    MPI_Type_create_resized( blocktype2, 0, sizeof(char), &blocktype);
+    MPI_Type_commit(&blocktype);
+
+    int disps[NDEC*NDEC];
+    int counts[NDEC*NDEC];
+    for (int ii=0; ii<NDEC; ii++) {
+        for (int jj=0; jj<NDEC; jj++) {
+            disps[ii*NDEC+jj] = ii*DIM*BLOCKSIZE+jj*BLOCKSIZE;
+            counts [ii*NDEC+jj] = 1;
+        }
+    }
+
+    MPI_Scatterv(board, counts, disps, blocktype, chunk, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 
+    /* evolution */
     // #pragma omp parallel for collapse(3)
-    for(int s=0; s<steps; s++){
-        for(int i=0; i<dim; i++){
-            for(int j=0; j<dim; j++){
-                if(check_neighbours(board, dim, i, j) == 1){ /* cell will be or remain alive */
-                    if(*(((unsigned char*)board) + i*dim + j) <= 127){  /* cell is currently dead */
-                        *(((unsigned char*)board) + i*dim + j) = 127;
+    for(int s=0; s<STEPS; s++){
+        // TODO: chunk outer edge propagation
+        char 
+
+        for(int i=0; i<BLOCKSIZE; i++){
+            for(int j=0; j<BLOCKSIZE; j++){
+                if(check_neighbours(board, BLOCKSIZE, i, j) == 1){ /* cell will be or remain alive */
+                    if(*(((unsigned char*)chunk) + i*BLOCKSIZE + j) <= 127){  /* cell is currently dead */
+                        *(((unsigned char*)chunk) + i*BLOCKSIZE + j) = 127;
                     }
                 }else{ /* cell will be or remain dead */
-                    if(*(((unsigned char*)board) + i*dim + j) >= 128){ /* cell is currently alive */
-                        *(((unsigned char*)board) + i*dim + j) = 128;
+                    if(*(((unsigned char*)chunk) + i*BLOCKSIZE + j) >= 128){ /* cell is currently alive */
+                        *(((unsigned char*)chunk) + i*BLOCKSIZE + j) = 128;
                     }
                 }
             }
         }
         
-        for(int i=0; i<dim; i++){
-            for(int j=0; j<dim; j++){
-                if(*(((unsigned char*)board) + i*dim + j) == 127){
-                    *(((unsigned char*)board) + i*dim + j) = 255;
+        for(int i=0; i<DIM; i++){
+            for(int j=0; j<DIM; j++){
+                if(*(((unsigned char*)board) + i*DIM + j) == 127){
+                    *(((unsigned char*)board) + i*DIM + j) = 255;
                 }else{
-                    if(*(((unsigned char*)board) + i*dim + j) == 128){
-                        *(((unsigned char*)board) + i*dim + j) = 0;
+                    if(*(((unsigned char*)board) + i*DIM + j) == 128){
+                        *(((unsigned char*)board) + i*DIM + j) = 0;
                     }
                 }
             }
         }
 
-        if(s % save == 0){
-            save_snap(board, dim, maxval, s);
+        /* TODO: save board on one process */
+        if(s % SAVE == 0){
+            save_snap(board, DIM, maxval, s);
         }
     }
+
+    MPI_Finalize();
 }
