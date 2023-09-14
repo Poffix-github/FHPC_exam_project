@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <mpi.h>
 
+#define SIZE 10
+
 int main(){
     int c_size, rank;
 
@@ -10,7 +12,7 @@ int main(){
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
     /* partition grid into blocks and scatter them through the processes*/
-    const int NDEC = 5; /* number of rows in decomposition */
+    const int NDEC = 5; /* number of blocks in a coloumn in decomposition */
     const int BLOCKSIZE = SIZE/NDEC; /* number of rows and columns in a block */
     char board[SIZE*SIZE];
 
@@ -28,7 +30,7 @@ int main(){
 
     char chunk[BLOCKSIZE*BLOCKSIZE];
     for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) chunk[ii] = 0;
-    
+
     MPI_Datatype blocktype;
     MPI_Datatype blocktype2;
 
