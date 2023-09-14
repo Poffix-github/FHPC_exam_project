@@ -1,6 +1,7 @@
 #include <gol.h>
 #include <stdio.h>
 #include <omp.h>
+#include <mpi.h>
 
 /* ==================================================
  * These functions evolve the board.
@@ -71,7 +72,18 @@ void evolution_static(void* board, const int dim, const int steps, const int max
      * - save list of cells to modify;
      * - mark cells to be modified;
      * */
-    #pragma omp parallel for collapse(3)
+    
+    int size, rank;
+
+    MPI_Init(NULL,NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
+    /* partition grid into blocks and scatter them through the processes*/
+    
+
+
+    // #pragma omp parallel for collapse(3)
     for(int s=0; s<steps; s++){
         for(int i=0; i<dim; i++){
             for(int j=0; j<dim; j++){
