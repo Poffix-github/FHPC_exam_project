@@ -32,6 +32,8 @@ int main( int argc, char **argv )
     MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
+    printf("rank %d\n", rank);
+
     if(rank == 0){
         get_args(argc, argv, &action, &k, &e, &n, &s, &fname);
     }
@@ -54,7 +56,7 @@ int main( int argc, char **argv )
             printf("reading image\n");
             read_pgm_image( &board, &maxval, &size, &size, fname);
         }
-        printf("rank %d maxval %d", rank, maxval);
+        printf("rank %d maxval %d\n", rank, maxval);
         switch( maxval ){
             case -1: printf("I/O error in header\n"); break;
             case -2: printf("Memory not sufficient\n"); break;
@@ -69,10 +71,10 @@ int main( int argc, char **argv )
                 if( e == ORDERED ){
                     if(rank == 0) evolution_ordered(board, size, n, maxval, s);
                 }else{ 
-                    printf("rank %d entering evolution_static", rank);
+                    printf("rank %d entering evolution_static\n", rank);
                     evolution_static(board, size, n, maxval, s, num_proc, rank);
                 }
-                printf("rank %d evolution done done", rank);
+                printf("rank %d evolution done done\n", rank);
         }
         
         if(rank == 0) free(board);

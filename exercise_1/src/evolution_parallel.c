@@ -169,7 +169,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
 
     MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    printf("rank %d scatter done", rank);
+    printf("rank %d scatter done\n", rank);
 
     MPI_Status status;
     char btm_row[BLOCKSIZE];
@@ -190,9 +190,9 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         if(rank == 0){
             /* send top row */
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            printf("rank %d first send done", rank);
+            printf("rank %d first send done\n", rank);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            printf("rank %d first receive done", rank);
+            printf("rank %d first receive done\n", rank);
             /* send bottom row */
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
@@ -206,26 +206,26 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            printf("rank %d first receive done", rank);
+            printf("rank %d first receive done\n", rank);
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            printf("rank %d first send done", rank);
+            printf("rank %d first send done\n", rank);
 
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            printf("rank %d second receive done", rank);
+            printf("rank %d second receive done\n", rank);
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            printf("rank %d second send done", rank);
+            printf("rank %d second send done\n", rank);
 
             MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            printf("rank %d third receive done", rank);
+            printf("rank %d third receive done\n", rank);
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            printf("rank %d third send done", rank);
+            printf("rank %d third send done\n", rank);
 
             MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            printf("rank %d fourth receive done", rank);
+            printf("rank %d fourth receive done\n", rank);
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            printf("rank %d fourth send done", rank);
+            printf("rank %d fourth send done\n", rank);
         }
-        printf("rank %d rows and coloumns propagation done", rank);
+        printf("rank %d rows and coloumns propagation done\n", rank);
         // /* send bottom row */
         // if(rank == 0){
         //     MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
@@ -274,7 +274,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block + NDEC*(NDEC-1), 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Send(block + NDEC*NDEC - 1, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
         }
-        printf("rank %d corners propagation done", rank);
+        printf("rank %d corners propagation done\n", rank);
 
         for(int i=0; i<BLOCKSIZE; i++){
             for(int j=0; j<BLOCKSIZE; j++){
@@ -290,7 +290,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             }
         }
 
-        printf("rank %d first pass done", rank);
+        printf("rank %d first pass done\n", rank);
         
         for(int i=0; i<DIM; i++){
             for(int j=0; j<DIM; j++){
@@ -306,12 +306,12 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
 
         if(s % SAVE == 0){
             MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
-            printf("rank %d gather done", rank);
+            printf("rank %d gather done\n", rank);
             
             if(rank == 0) save_snap(board, DIM, maxval, s);
 
             MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
-            printf("rank %d scatter done", rank);
+            printf("rank %d scatter done\n", rank);
         }
     }
 }
