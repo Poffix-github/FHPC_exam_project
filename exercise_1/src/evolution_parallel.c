@@ -16,25 +16,34 @@
  * it is necessary to check if the cell is >=128 or <=127 respectively.
  * ==================================================
  */
-#define MAX_NUMBER_OF_CELLS 8
+#define NUM_NEIGHBOURS 8
 
 /* Count the number of alive neighbours 
  */
-char check_neighbours(const void* board, const int DIM, const int i, const int j, const char** outer){
-    const int off_sets[MAX_NUMBER_OF_CELLS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
+char check_neighbours(const void* board, const int DIM, const int i, const int j, 
+                      const char t_l, const char* top, const char t_r, const char* left, 
+                      const char* right, const char b_l, const char* bottom, const char b_r){
+    const int off_sets[NUM_NEIGHBOURS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
                                                   {0, -1},                       {0, 1},
                                                   {1, -1},  {1, 0},  {1, 1}};
     unsigned int count=0;    /* number of alive cells around the ij-th */
-    
-    for(int z=0; z<MAX_NUMBER_OF_CELLS; z++){
-        /* compute coordinates couple */
-        int k = i + off_sets[z][0] < 0 ? DIM-1 : (i + off_sets[z][0]) % DIM;
-        int l = j + off_sets[z][1] < 0 ? DIM-1 : (j + off_sets[z][1]) % DIM;
-        
-        if( ((unsigned char*)board)[k*DIM + l] >= 128 ){
-            count++;
-        }
+
+
+    /* inner cell */
+    if(i == 0 || j == 0 || i == DIM-1 || j == DIM-1){
+        for(int z=0; z<NUM_NEIGHBOURS; z++)
+            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+    }else {     /* outer cell */
+        count += (int)t_l >= 128 ? 1 : 0;
+        count += (int)top[j] >= 128 ? 1 : 0;
+        count += (int)t_r >= 128 ? 1 : 0;
+        count += (int)left[i] >= 128 ? 1 : 0;
+        count += (int)right[i] >= 128 ? 1 : 0;
+        count += (int)b_l >= 128 ? 1 : 0;
+        count += (int)bottom[j] >= 128 ? 1 : 0;
+        count += (int)b_r >= 128 ? 1 : 0;
     }
+
     return count == 2 || count == 3 ? 1 : 0;    /* if 2 or 3 neighbour cells are alive, 
                                                  * the current cell has to become, or remain, alive; 
                                                  * otherwise it has to die 
@@ -103,18 +112,18 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
      * - mark cells to be modified;
      * */
     
-    int c_size, rank;
+    int num_proc, rank;
 
     MPI_Init(NULL,NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &c_size);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
     /* partition grid into blocks and scatter them through the processes*/
     const int NDEC = 5; /* number of blocks in a coloumn in decomposition */
     const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
 
-    if(c_size != NDEC*NDEC){
-        fprintf(stderr,"Error: number of PEs %d != %d x %d\n", c_size, NDEC, NDEC);
+    if(num_proc != NDEC*NDEC){
+        fprintf(stderr,"Error: number of PEs %d != %d x %d\n", num_proc, NDEC, NDEC);
         MPI_Finalize();
         exit(-1);
     }
@@ -151,9 +160,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         char right_clmn[BLOCKSIZE];
         char temp[BLOCKSIZE];
         char top_left, top_right, btm_left, btm_right;
-        char* outer[8] = [&top_left, top_row, &top_right, 
-                          left_clmn,          right_clmn, 
-                          &btm_left, btm_row, &btm_right];
 
         for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
         for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
@@ -263,9 +269,12 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             }
         }
 
-        /* TODO: save board on one process */
         if(s % SAVE == 0){
-            save_snap(board, DIM, maxval, s);
+            MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
+            
+            if(rank == 0) save_snap(board, DIM, maxval, s);
+
+            MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
         }
     }
 
