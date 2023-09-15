@@ -1,5 +1,6 @@
 #include <gol.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <omp.h>
 #include <mpi.h>
 
@@ -153,7 +154,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     /* evolution */
     // #pragma omp parallel for collapse(3)
     for(int s=0; s<STEPS; s++){
-        MPI_status status;
+        MPI_Status status;
         char btm_row[BLOCKSIZE];
         char top_row[BLOCKSIZE];
         char left_clmn[BLOCKSIZE];
@@ -222,30 +223,30 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         // }
         /* send cells in diagonal */
         if( (rank/NDEC)%2 == 0 ){   /* blocks in even rows send first */
-            MPI_Send(block[0], 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block[NDEC-1], 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block[NDEC*(NDEC-1)], 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block[NDEC*NDEC - 1], 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC-1, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
 
-            MPI_Send(block[0], 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block[NDEC-1], 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block[NDEC*(NDEC-1)], 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block[NDEC*NDEC - 1], 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC-1, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
         }
 
         for(int i=0; i<BLOCKSIZE; i++){
             for(int j=0; j<BLOCKSIZE; j++){
-                if(check_neighbours(board, BLOCKSIZE, i, j, outer) == 1){ /* cell will be or remain alive */
+                if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right) == 1){ /* cell will be or remain alive */
                     if(*(((unsigned char*)block) + i*BLOCKSIZE + j) <= 127){  /* cell is currently dead */
                         *(((unsigned char*)block) + i*BLOCKSIZE + j) = 127;
                     }
@@ -259,11 +260,11 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         
         for(int i=0; i<DIM; i++){
             for(int j=0; j<DIM; j++){
-                if(*(((unsigned char*)board) + i*DIM + j) == 127){
-                    *(((unsigned char*)board) + i*DIM + j) = 255;
+                if(*(((unsigned char*)block) + i*DIM + j) == 127){
+                    *(((unsigned char*)block) + i*DIM + j) = 255;
                 }else{
-                    if(*(((unsigned char*)board) + i*DIM + j) == 128){
-                        *(((unsigned char*)board) + i*DIM + j) = 0;
+                    if(*(((unsigned char*)block) + i*DIM + j) == 128){
+                        *(((unsigned char*)block) + i*DIM + j) = 0;
                     }
                 }
             }
