@@ -25,9 +25,17 @@ char *fname  = NULL;
 
 int main( int argc, char **argv )
 {    
-    get_args(argc, argv, &action, &k, &e, &n, &s, &fname);
+    int num_proc, rank;
+
+    MPI_Init(NULL,NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
+    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
+    if(rank == 0){
+        get_args(argc, argv, &action, &k, &e, &n, &s, &fname);
+    }
     
-    if( action == INIT ){
+    if( action == INIT && rank == 0){
         printf("generating image\n");
         void *board = random_board(k, fname);
         
@@ -41,26 +49,31 @@ int main( int argc, char **argv )
         int     size = 0;
         void    *board;
         
-        printf("reading image\n");
-        read_pgm_image( &board, &maxval, &size, &size, fname);
+        if(rank == 0){
+            printf("reading image\n");
+            read_pgm_image( &board, &maxval, &size, &size, fname);
+        }
         
         switch( maxval ){
             case -1: printf("I/O error in header\n"); break;
             case -2: printf("Memory not sufficient\n"); break;
             case -3: printf("I/O error in body\n"); break;
             default:
-                /* swap endianism */
-                if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
+                if(rank == 0){
+                    /* swap endianism */
+                    if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
+                    printf("start evolution\n");
+                }
                 
-                printf("start evolution\n");
-                if( e == ORDERED ) evolution_ordered(board, size, n, maxval, s);
-                else evolution_static(board, size, n, maxval, s);
+                if( e == ORDERED ){
+                    if(rank == 0) evolution_ordered(board, size, n, maxval, s);
+                }else evolution_static(board, size, n, maxval, s, num_proc, rank);
         }
         
-        free(board);
+        if(rank == 0) free(board);
     }
     
-    if ( fname != NULL ){
-        free ( fname );
-    }
+    if (rank == 0 && fname != NULL ) free ( fname );
+
+    MPI_Finalize();
 }

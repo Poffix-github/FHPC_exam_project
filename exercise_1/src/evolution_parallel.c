@@ -128,17 +128,13 @@ int btm_right_blk(const int rank, const int NDEC){
 /* Evolves the whole board once. 
  * The evolution is static, meaning the evaluation of the board is disentangled from the update. 
  */
-void evolution_static(void* board, const int DIM, const int STEPS, const int maxval, const int SAVE){
+void evolution_static(void* board, const int DIM, const int STEPS, const int maxval, const int SAVE, const int num_proc, const int rank){
     /* Options:
      * - save list of cells to modify;
      * - mark cells to be modified;
      * */
     
-    int num_proc, rank;
-
-    MPI_Init(NULL,NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    
 
     /* partition grid into blocks and scatter them through the processes*/
     const int NDEC = 5; /* number of blocks in a coloumn in decomposition */
@@ -299,6 +295,4 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
         }
     }
-
-    MPI_Finalize();
 }
