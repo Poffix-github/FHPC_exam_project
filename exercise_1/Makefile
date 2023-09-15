@@ -1,10 +1,10 @@
-CC = gcc
+CC = mpicc
 
 INCDIR = include
 OBJDIR = obj
 # CFLAGS contains options passed to the compiler
 CFLAGS = -c -I$(INCDIR)
-OBJECTS = main.o $(OBJDIR)/evolution.o $(OBJDIR)/read_write_pgm_image.o $(OBJDIR)/utilities.o
+OBJECTS = main.o $(OBJDIR)/evolution_parallel.o $(OBJDIR)/read_write_pgm_image.o $(OBJDIR)/utilities.o
 
 gol.x: $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@

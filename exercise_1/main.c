@@ -53,26 +53,8 @@ int main( int argc, char **argv )
                 if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
                 
                 printf("start evolution\n");
-                
-                for(int i=0; i<n; i++){
-                    if( e == ORDERED ) evolution_ordered(board, size);
-                    else evolution_static(board, size);
-                    
-                    if(i % s == 0){
-                        /* swap endianism */
-                        if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
-                        
-                        char *snapshot_name;
-                        size_t name_size = 29*sizeof(char);
-                        snapshot_name = (char *)malloc(name_size);
-                        snprintf(snapshot_name, name_size, "snapshots/snapshot_%05d.pgm", i);
-                        
-                        write_pgm_image( board, maxval, size, size, snapshot_name);
-                        
-                        /* swap endianism */
-                        if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
-                    }
-                }
+                if( e == ORDERED ) evolution_ordered(board, size, n, maxval, s);
+                else evolution_static(board, size, n, maxval, s);
         }
         
         free(board);
