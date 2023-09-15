@@ -69,6 +69,8 @@ int main( int argc, char **argv )
                 if( e == ORDERED ){
                     if(rank == 0) evolution_ordered(board, size, n, maxval, s);
                 }else evolution_static(board, size, n, maxval, s, num_proc, rank);
+
+                printf("rank %d evolution done done", rank);
         }
         
         if(rank == 0) free(board);

@@ -137,8 +137,10 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     
 
     /* partition grid into blocks and scatter them through the processes*/
-    const int NDEC = 5; /* number of blocks in a coloumn in decomposition */
+    const int NDEC = 2; /* number of blocks in a coloumn in decomposition */
     const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
+
+    printf("rank %d in evolution_static", rank);
 
     if(num_proc != NDEC*NDEC){
         fprintf(stderr,"Error: number of PEs %d != %d x %d\n", num_proc, NDEC, NDEC);
@@ -167,27 +169,30 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
 
     MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
 
+    printf("rank %d scatter done", rank);
+
+    MPI_Status status;
+    char btm_row[BLOCKSIZE];
+    char top_row[BLOCKSIZE];
+    char left_clmn[BLOCKSIZE];
+    char right_clmn[BLOCKSIZE];
+    char temp[BLOCKSIZE];
+    char top_left, top_right, btm_left, btm_right;
+
+    for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
+    for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
+    for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
+    for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
 
     /* evolution */
     // #pragma omp parallel for collapse(3)
     for(int s=0; s<STEPS; s++){
-        MPI_Status status;
-        char btm_row[BLOCKSIZE];
-        char top_row[BLOCKSIZE];
-        char left_clmn[BLOCKSIZE];
-        char right_clmn[BLOCKSIZE];
-        char temp[BLOCKSIZE];
-        char top_left, top_right, btm_left, btm_right;
-
-        for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
-        for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
-        for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
-        for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
-
         if(rank == 0){
             /* send top row */
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            printf("rank %d first send done", rank);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            printf("rank %d first receive done", rank);
             /* send bottom row */
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
@@ -201,17 +206,26 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            printf("rank %d first receive done", rank);
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            printf("rank %d first send done", rank);
 
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            printf("rank %d second receive done", rank);
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            printf("rank %d second send done", rank);
 
             MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            printf("rank %d third receive done", rank);
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            printf("rank %d third send done", rank);
 
             MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            printf("rank %d fourth receive done", rank);
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            printf("rank %d fourth send done", rank);
         }
+        printf("rank %d rows and coloumns propagation done", rank);
         // /* send bottom row */
         // if(rank == 0){
         //     MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
@@ -238,7 +252,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         //     MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
         // }
-        /* send cells in diagonal */
+        /* send corners in diagonal */
         if( (rank/NDEC)%2 == 0 ){   /* blocks in even rows send first */
             MPI_Send(block, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Send(block + NDEC-1, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
@@ -260,6 +274,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block + NDEC*(NDEC-1), 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Send(block + NDEC*NDEC - 1, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
         }
+        printf("rank %d corners propagation done", rank);
 
         for(int i=0; i<BLOCKSIZE; i++){
             for(int j=0; j<BLOCKSIZE; j++){
@@ -274,6 +289,8 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
                 }
             }
         }
+
+        printf("rank %d first pass done", rank);
         
         for(int i=0; i<DIM; i++){
             for(int j=0; j<DIM; j++){
@@ -289,10 +306,12 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
 
         if(s % SAVE == 0){
             MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
+            printf("rank %d gather done", rank);
             
             if(rank == 0) save_snap(board, DIM, maxval, s);
 
             MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
+            printf("rank %d scatter done", rank);
         }
     }
 }
