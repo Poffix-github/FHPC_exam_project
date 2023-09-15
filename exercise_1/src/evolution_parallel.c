@@ -16,17 +16,15 @@
  * it is necessary to check if the cell is >=128 or <=127 respectively.
  * ==================================================
  */
-
 #define MAX_NUMBER_OF_CELLS 8
-
 
 /* Count the number of alive neighbours 
  */
-char check_neighbours(const void* board, const int DIM, const int i, const int j){
-    const int off_sets[MAX_NUMBER_OF_CELLS][2] = {  {-1, -1}, {-1, 0}, {-1, 1},
-                                                     {0, -1},           {0, 1},
-                                                     {1, -1},  {1, 0},  {1, 1}  };
-    int count=0;    /* number of alive cells around the ij-th */
+char check_neighbours(const void* board, const int DIM, const int i, const int j, const char** outer){
+    const int off_sets[MAX_NUMBER_OF_CELLS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
+                                                  {0, -1},                       {0, 1},
+                                                  {1, -1},  {1, 0},  {1, 1}};
+    unsigned int count=0;    /* number of alive cells around the ij-th */
     
     for(int z=0; z<MAX_NUMBER_OF_CELLS; z++){
         /* compute coordinates couple */
@@ -80,6 +78,22 @@ int left_block(const int rank, const int NDEC){
     return rank%NDEC == 0 ? rank + NDEC - 1 : rank - 1;
 }
 
+int top_left_blk(const int rank, const int NDEC){
+    return rank%NDEC == 0 ? top_block(rank, NDEC) + NDEC-1 : top_block(rank, NDEC) - 1;
+}
+
+int top_right_blk(const int rank, const int NDEC){
+    return rank%NDEC == NDEC-1 ? top_block(rank, NDEC) - NDEC+1 : top_block(rank, NDEC) + 1;
+}
+
+int btm_left_blk(const int rank, const int NDEC){
+    return rank%NDEC == 0 ? bottom_block(rank, NDEC) + NDEC-1 : bottom_block(rank, NDEC) - 1;
+}
+
+int btm_right_blk(const int rank, const int NDEC){
+    return rank%NDEC == NDEC-1 ? bottom_block(rank, NDEC) - NDEC+1 : bottom_block(rank, NDEC) + 1;
+}
+
 /* Evolves the whole board once. 
  * The evolution is static, meaning the evaluation of the board is disentangled from the update. 
  */
@@ -130,55 +144,102 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     /* evolution */
     // #pragma omp parallel for collapse(3)
     for(int s=0; s<STEPS; s++){
-        // TODO: block outer edge propagation
         MPI_status status;
-        char bttm_row[BLOCKSIZE];
+        char btm_row[BLOCKSIZE];
         char top_row[BLOCKSIZE];
         char left_clmn[BLOCKSIZE];
+        char right_clmn[BLOCKSIZE];
         char temp[BLOCKSIZE];
-        for (int ii=0; ii<BLOCKSIZE; ii++) bttm_row[ii] = 0;
+        char top_left, top_right, btm_left, btm_right;
+        char* outer[8] = [&top_left, top_row, &top_right, 
+                          left_clmn,          right_clmn, 
+                          &btm_left, btm_row, &btm_right];
+
+        for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
         for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
         for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
+        for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
 
-        /* send top row */
         if(rank == 0){
-            // Send above
+            /* send top row */
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            // Receive from below
-            MPI_Recv(bttm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        }else{
-            // Receive from below
-            MPI_Recv(bttm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            // Send above
-            MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        }
-        /* send bottom row */
-        if(rank == 0){
-            // Send below
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            /* send bottom row */
             MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            // Receive from above
-            MPI_Recv(bttm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        }else{
-            // Receive from above
-            MPI_Recv(bttm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            // Send below
-            MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        }
-        /* send right coloumn */
-        for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
-        if(rank == 0){
-            // Send right
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            /* send right coloumn */
+            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            // Receive from left
             MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            /* send left coloumn */
+            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE];
+            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
+
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+
             MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
+
+            MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+        }
+        // /* send bottom row */
+        // if(rank == 0){
+        //     MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+        //     MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        // }else{
+        //     MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+        // }
+        // /* send right coloumn */
+        // for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
+        // if(rank == 0){
+        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
+        //     MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        // }else{
+        //     MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
+        // }
+        // /* send left coloumn */
+        // for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE];
+        // if(rank == 0){
+        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+        //     MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        // }else {
+        //     MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+        // }
+        /* send cells in diagonal */
+        if( (rank/NDEC)%2 == 0 ){   /* blocks in even rows send first */
+            MPI_Send(block[0], 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block[NDEC-1], 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block[NDEC*(NDEC-1)], 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block[NDEC*NDEC - 1], 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+
+            MPI_Recv(btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        }else{
+            MPI_Recv(btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+
+            MPI_Send(block[0], 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block[NDEC-1], 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block[NDEC*(NDEC-1)], 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block[NDEC*NDEC - 1], 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }
 
         for(int i=0; i<BLOCKSIZE; i++){
             for(int j=0; j<BLOCKSIZE; j++){
-                if(check_neighbours(board, BLOCKSIZE, i, j) == 1){ /* cell will be or remain alive */
+                if(check_neighbours(board, BLOCKSIZE, i, j, outer) == 1){ /* cell will be or remain alive */
                     if(*(((unsigned char*)block) + i*BLOCKSIZE + j) <= 127){  /* cell is currently dead */
                         *(((unsigned char*)block) + i*BLOCKSIZE + j) = 127;
                     }
