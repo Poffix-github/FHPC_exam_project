@@ -51,6 +51,27 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
                                                  */
 }
 
+char check_neighbours_ord(const void* board, const int dim, const int i, const int j){
+    const int off_sets[NUM_NEIGHBOURS][2] = {  {-1, -1}, {-1, 0}, {-1, 1},
+                                                     {0, -1},           {0, 1},
+                                                     {1, -1},  {1, 0},  {1, 1}  };
+    int count=0;    /* number of alive cells around the ij-th */
+
+    for(int z=0; z<NUM_NEIGHBOURS; z++){
+        /* compute coordinates couple */
+        int k = i + off_sets[z][0] < 0 ? dim-1 : (i + off_sets[z][0]) % dim;
+        int l = j + off_sets[z][1] < 0 ? dim-1 : (j + off_sets[z][1]) % dim;
+
+        if( ((unsigned char*)board)[k*dim + l] >= 128 ){
+            count++;
+        }
+    }
+    return count == 2 || count == 3 ? 1 : 0;    /* if 2 or 3 neighbour cells are alive, 
+                                                 * the current cell has to become, or remain, alive; 
+                                                 * otherwise it has to die 
+                                                 */
+}
+
 /* Evolves the whole board once. 
  * The evolution is ordered, meaning by row and from the top left cell.
  */
@@ -59,7 +80,7 @@ void evolution_ordered(void* board, const int DIM, const int STEPS, const int ma
     for(int s=0; s<STEPS; s++){
         for(int i=0; i<DIM; i++){
             for(int j=0; j<DIM; j++){
-                if(check_neighbours(board, DIM, i, j) == 1){
+                if(check_neighbours_ord(board, DIM, i, j) == 1){
                     *(((unsigned short int*)board) + i*DIM + j) = 255; /* board[i][j] = true, the cell is alive */
                 }else{
                     *(((unsigned short int*)board) + i*DIM + j) = 0; /* board[i][j] = false, the cell is dead */
@@ -172,7 +193,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             /* send bottom row */
-            MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             /* send right coloumn */
             for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
@@ -187,7 +208,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
 
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
 
             MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
