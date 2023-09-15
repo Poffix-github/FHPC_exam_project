@@ -54,7 +54,7 @@ int main( int argc, char **argv )
             printf("reading image\n");
             read_pgm_image( &board, &maxval, &size, &size, fname);
         }
-        
+        printf("rank %d maxval %d", rank, maxval);
         switch( maxval ){
             case -1: printf("I/O error in header\n"); break;
             case -2: printf("Memory not sufficient\n"); break;
