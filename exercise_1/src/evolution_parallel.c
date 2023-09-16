@@ -140,7 +140,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     const int NDEC = 2; /* number of blocks in a coloumn in decomposition */
     const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
 
-    printf("rank %d in evolution_static", rank);
+    printf("rank %d in evolution_static\n", rank);
 
     if(num_proc != NDEC*NDEC){
         fprintf(stderr,"Error: number of PEs %d != %d x %d\n", num_proc, NDEC, NDEC);
@@ -187,7 +187,8 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     /* evolution */
     // #pragma omp parallel for collapse(3)
     for(int s=0; s<STEPS; s++){
-        if(rank == 0){
+        /* propagate rows */
+        if((rank/NDEC)%2 == 0){
             /* send top row */
             MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
             printf("rank %d first send done\n", rank);
@@ -196,14 +197,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             /* send bottom row */
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            /* send right coloumn */
-            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
-            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            /* send left coloumn */
-            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE];
-            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
             MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             printf("rank %d first receive done\n", rank);
@@ -214,45 +207,33 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             printf("rank %d second receive done\n", rank);
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
             printf("rank %d second send done\n", rank);
-
+        }
+        /* propagate coloumns */
+        if((rank%NDEC)%2 == 0){
+            /* send right coloumn */
+            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
+            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            /* send left coloumn */
+            for(int i=0; i<BLOCKSIZE; i++) temp[i] = block[i*BLOCKSIZE];
+            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+        }else{
             MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             printf("rank %d third receive done\n", rank);
+            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
             printf("rank %d third send done\n", rank);
 
             MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             printf("rank %d fourth receive done\n", rank);
+            for(int i=0; i<BLOCKSIZE; i++) temp[i] = block[i*BLOCKSIZE];
             MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
             printf("rank %d fourth send done\n", rank);
         }
         printf("rank %d rows and coloumns propagation done\n", rank);
-        // /* send bottom row */
-        // if(rank == 0){
-        //     MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        //     MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        // }else{
-        //     MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        //     MPI_Sendv(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        // }
-        // /* send right coloumn */
-        // for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
-        // if(rank == 0){
-        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        //     MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        // }else{
-        //     MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        // }
-        // /* send left coloumn */
-        // for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE];
-        // if(rank == 0){
-        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        //     MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        // }else {
-        //     MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-        //     MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
-        // }
-        /* send corners in diagonal */
+
+        /* propagate corners in diagonal */
         if( (rank/NDEC)%2 == 0 ){   /* blocks in even rows send first */
             MPI_Send(block, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Send(block + NDEC-1, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
