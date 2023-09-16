@@ -336,6 +336,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         }
 
         if(rank == 0){
+            printf("after fisrt pass: \n");
             print_board_minimal(block, BLOCKSIZE);
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
@@ -357,10 +358,18 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             }
         }
 
+        if(rank == 0){
+            printf("after second pass: \n");
+            print_board_minimal(block, BLOCKSIZE);
+        }
+        
         if(s % SAVE == 0){
             MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD);
-
-            if (rank == 0) print_board_minimal(board, BLOCKSIZE);
+            
+            if(rank == 0){
+                printf("after gather: \n");
+                print_board_minimal(block, BLOCKSIZE);
+            }   
             
             if(rank == 0) save_snap(board, DIM, maxval, s);
 
