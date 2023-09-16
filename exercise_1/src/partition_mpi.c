@@ -12,7 +12,7 @@ int main(){
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
     /* partition grid into blocks and scatter them through the processes*/
-    const int NDEC = 5; /* number of blocks in a coloumn in decomposition */
+    const int NDEC = 2; /* number of blocks in a coloumn in decomposition */
     const int BLOCKSIZE = SIZE/NDEC; /* number of rows and columns in a block */
     char board[SIZE*SIZE];
 
