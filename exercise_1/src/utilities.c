@@ -98,13 +98,3 @@ void save_snap(void* board, const int size, const int maxval, const int num){
     /* swap endianism */
     if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
 }
-
-/* Prints every cell of the given board in the most light way possible. */
-void print_board_minimal(const unsigned char* board, const int dim){
-    for(int i=0; i<dim; i++){
-        for(int j=0; j<dim; j++){
-            printf("%d ", *(board + i*dim + j)); /* just prints the content of the board */
-        }
-        printf("\n");
-    }
-}

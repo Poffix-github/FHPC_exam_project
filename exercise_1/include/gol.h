@@ -23,5 +23,3 @@ void get_args(int argc, char **argv, int *action, int *k, int *e, int *n, int *s
 void *random_board(const int size, char *string);
 
 void save_snap(void* board, const int size, const int maxval, const int num);
-
-void print_board_minimal(const unsigned char* board, const int dim);
