@@ -266,7 +266,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         if((rank/NDEC)%2 == 0){
             /* send top row */
 
-            printf("rank: %d,    top: %d,    bottom: %d", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
+            printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
 
             MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
@@ -274,6 +274,9 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
+            
+            printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
+
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
 
