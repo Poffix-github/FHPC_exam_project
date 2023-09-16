@@ -74,7 +74,7 @@ int main(){
         MPI_Barrier(MPI_COMM_WORLD);
     }
 
-    MPI_Gatherv(chunk, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Gather(chunk, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
 
     if(rank == 0){
         printf("Global matrix: \n");
