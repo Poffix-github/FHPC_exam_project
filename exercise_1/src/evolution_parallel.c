@@ -344,7 +344,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
                 printf("\n");
             }
         }
-}
         
         for(int i=0; i<BLOCKSIZE; i++){
             for(int j=0; j<BLOCKSIZE; j++){
