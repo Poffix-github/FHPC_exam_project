@@ -27,8 +27,8 @@ void get_args(int argc, char **argv, int *action, int *k, int *e, int *n, int *s
             *action = RUN; break;
       
         case 'k':
-            *k = atoi(optarg) < 100 ? 100 : atoi(optarg); break;
-
+            //*k = atoi(optarg) < 100 ? 100 : atoi(optarg); break;
+            *k = atoi(optarg); break; // TODO: delete
         case 'e':
             *e = atoi(optarg); break;
 
