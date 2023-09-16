@@ -22,8 +22,8 @@
 /* Count the number of alive neighbours 
  */
 char check_neighbours(const void* board, const int DIM, const int i, const int j, 
-                      const char t_l, const char* top, const char t_r, const char* left, 
-                      const char* right, const char b_l, const char* bottom, const char b_r, int rank){
+                      const unsigned char t_l, const unsigned char* top, const unsigned char t_r, const unsigned char* left, 
+                      const unsigned char* right, const unsigned char b_l, const unsigned char* bottom, const unsigned char b_r, int rank){
     const int off_sets[NUM_NEIGHBOURS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
                                                   {0, -1},                       {0, 1},
                                                   {1, -1},  {1, 0},  {1, 1}};
