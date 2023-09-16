@@ -273,13 +273,13 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
 
         printf("rank %d first pass done\n", rank);
         
-        for(int i=0; i<DIM; i++){
-            for(int j=0; j<DIM; j++){
-                if(*(((unsigned char*)block) + i*DIM + j) == 127){
-                    *(((unsigned char*)block) + i*DIM + j) = 255;
+        for(int i=0; i<BLOCKSIZE; i++){
+            for(int j=0; j<BLOCKSIZE; j++){
+                if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 127){
+                    *(((unsigned char*)block) + i*BLOCKSIZE + j) = 255;
                 }else{
-                    if(*(((unsigned char*)block) + i*DIM + j) == 128){
-                        *(((unsigned char*)block) + i*DIM + j) = 0;
+                    if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 128){
+                        *(((unsigned char*)block) + i*BLOCKSIZE + j) = 0;
                     }
                 }
             }
