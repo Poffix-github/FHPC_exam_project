@@ -339,7 +339,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             print_board_minimal(block, BLOCKSIZE);
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
-                    printf("%d", *(((unsigned char*)block) + i*dim + j)); /* just prints the content of the board */
+                    printf("%d ", *(((unsigned char*)block) + i*BLOCKSIZE + j)); /* just prints the content of the board */
                 }
                 printf("\n");
             }

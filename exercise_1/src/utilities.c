@@ -103,7 +103,7 @@ void save_snap(void* board, const int size, const int maxval, const int num){
 void print_board_minimal(const char* board, const int dim){
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
-            printf("%d", *(board + i*dim + j)); /* just prints the content of the board */
+            printf("%d ", *(board + i*dim + j)); /* just prints the content of the board */
         }
         printf("\n");
     }
