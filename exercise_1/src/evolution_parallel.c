@@ -34,7 +34,7 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
     // }
 
     /* inner cell */
-    if(i == 0 || j == 0 || i == DIM-1 || j == DIM-1){
+    if(i != 0 && j != 0 && i != DIM-1 && j != DIM-1){
         for(int z=0; z<NUM_NEIGHBOURS; z++){
             // if(rank == 0){
             //     int k = i + off_sets[z][0];
@@ -219,8 +219,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     /* partition grid into blocks and scatter them through the processes*/
     const int NDEC = 2; /* number of blocks in a coloumn in decomposition */
     const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
-
-    printf("rank %d in evolution_static\n", rank);
 
     if(num_proc != NDEC*NDEC){
         fprintf(stderr,"Error: number of PEs %d != %d x %d\n", num_proc, NDEC, NDEC);
