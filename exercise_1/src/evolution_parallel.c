@@ -35,12 +35,11 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
 
     /* inner cell */
     if(i != 0 && j != 0 && i != DIM-1 && j != DIM-1){
+        // printf("rank %d, neighbours of (%d, %d):", rank, i, j); 
         for(int z=0; z<NUM_NEIGHBOURS; z++){
-            // if(rank == 0){
-            //     int k = i + off_sets[z][0];
-            //     int l = j + off_sets[z][1];
-            //     printf("board[%d][%d] = %d\n", k, l, ((unsigned char*)board)[k*DIM + l]);
-            // }
+                // int k = i + off_sets[z][0];
+                // int l = j + off_sets[z][1];
+                // printf("[%d][%d] = %d\n", k, l, ((unsigned char*)board)[k*DIM + l]);
             if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
         }
     }else {     /* outer cell */
@@ -319,6 +318,12 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block + NDEC-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Send(block + NDEC*(NDEC-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Send(block + NDEC*NDEC - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+        }
+
+        if(rank == 0){
+            printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
+            printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
+            printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
         }
 
         if(rank == 0){
