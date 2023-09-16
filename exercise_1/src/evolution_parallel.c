@@ -226,13 +226,13 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         exit(-1);
     }
 
-    char block[BLOCKSIZE*BLOCKSIZE];
+    unsigned char block[BLOCKSIZE*BLOCKSIZE];
     for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) block[ii] = 0;
 
     MPI_Datatype blocktype;
     MPI_Datatype blocktype2;
 
-    MPI_Type_vector(BLOCKSIZE, BLOCKSIZE, DIM, MPI_CHAR, &blocktype2);
+    MPI_Type_vector(BLOCKSIZE, BLOCKSIZE, DIM, MPI_UNSIGNED_CHAR, &blocktype2);
     MPI_Type_create_resized( blocktype2, 0, sizeof(char), &blocktype);
     MPI_Type_commit(&blocktype);
 
@@ -245,15 +245,15 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         }
     }
 
-    MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
     MPI_Status status;
-    char btm_row[BLOCKSIZE];
-    char top_row[BLOCKSIZE];
-    char left_clmn[BLOCKSIZE];
-    char right_clmn[BLOCKSIZE];
-    char temp[BLOCKSIZE];
-    char top_left, top_right, btm_left, btm_right;
+    unsigned char btm_row[BLOCKSIZE];
+    unsigned char top_row[BLOCKSIZE];
+    unsigned char left_clmn[BLOCKSIZE];
+    unsigned char right_clmn[BLOCKSIZE];
+    unsigned char temp[BLOCKSIZE];
+    unsigned char top_left, top_right, btm_left, btm_right;
 
     for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
     for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
@@ -266,59 +266,64 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         /* propagate rows */
         if((rank/NDEC)%2 == 0){
             /* send top row */
-            MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             /* send bottom row */
-            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
         }
         /* propagate coloumns */
         if((rank%NDEC)%2 == 0){
             /* send right coloumn */
             for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
-            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(left_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             /* send left coloumn */
             for(int i=0; i<BLOCKSIZE; i++) temp[i] = block[i*BLOCKSIZE];
-            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(right_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(left_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(left_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
-            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, right_block(rank, NDEC), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(right_clmn, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(right_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             for(int i=0; i<BLOCKSIZE; i++) temp[i] = block[i*BLOCKSIZE];
-            MPI_Send(temp, BLOCKSIZE, MPI_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(rank, NDEC), 0, MPI_COMM_WORLD);
         }
 
         /* propagate corners in diagonal */
         if( (rank/NDEC)%2 == 0 ){   /* blocks in even rows send first */
-            MPI_Send(block, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC-1, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(&btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(&btm_right, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&btm_left, 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_right, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_left, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD, &status);
 
-            MPI_Send(block, 1, MPI_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC-1, 1, MPI_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
+        }
+
+        if(rank == 0){
+            printf("before fisrt pass: \n");
+            print_board_minimal(block, BLOCKSIZE);
         }
 
         for(int i=0; i<BLOCKSIZE; i++){
@@ -338,12 +343,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         if(rank == 0){
             printf("after fisrt pass: \n");
             print_board_minimal(block, BLOCKSIZE);
-            for(int i=0; i<BLOCKSIZE; i++){
-                for(int j=0; j<BLOCKSIZE; j++){
-                    printf("%d ", *(((unsigned char*)block) + i*BLOCKSIZE + j)); /* just prints the content of the board */
-                }
-                printf("\n");
-            }
         }
         
         for(int i=0; i<BLOCKSIZE; i++){
@@ -364,7 +363,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         }
         
         if(s % SAVE == 0){
-            MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD);
+            MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD);
             
             if(rank == 0){
                 printf("after gather: \n");
@@ -373,7 +372,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             
             if(rank == 0) save_snap(board, DIM, maxval, s);
 
-            MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
+            MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
         }
     }
 }
