@@ -32,11 +32,15 @@ int main( int argc, char **argv )
     MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
-    printf("rank %d\n", rank);
-
     if(rank == 0){
         get_args(argc, argv, &action, &k, &e, &n, &s, &fname);
     }
+
+    MPI_Bcast(&action, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&k, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&e, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&s, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
     if( action == INIT && rank == 0){
         printf("generating image\n");
@@ -56,7 +60,10 @@ int main( int argc, char **argv )
             printf("reading image\n");
             read_pgm_image( &board, &maxval, &size, &size, fname);
         }
-        printf("rank %d maxval %d\n", rank, maxval);
+
+        MPI_Bcast(&maxval, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
         switch( maxval ){
             case -1: printf("I/O error in header\n"); break;
             case -2: printf("Memory not sufficient\n"); break;
@@ -74,7 +81,7 @@ int main( int argc, char **argv )
                     printf("rank %d entering evolution_static\n", rank);
                     evolution_static(board, size, n, maxval, s, num_proc, rank);
                 }
-                printf("rank %d evolution done done\n", rank);
+                printf("rank %d evolution done\n", rank);
         }
         
         if(rank == 0) free(board);
