@@ -276,9 +276,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         }
 
         if(s % SAVE == 0){
-            int error=0;
-            error = MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
-            fprintf(stderr,"rank %d. Error: %d\n", rank, error);
+            MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD);
             printf("rank %d gather done\n", rank);
             
             if(rank == 0) save_snap(board, DIM, maxval, s);
