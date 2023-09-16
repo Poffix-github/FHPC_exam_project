@@ -266,7 +266,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
                 printf("Global matrix: \n");
                 for (int ii=0; ii<DIM; ii++) {
                     for (int jj=0; jj<DIM; jj++) {
-                        printf("%3d ",(int)a[ii*DIM+jj]);
+                        printf("%3d ",((unsigned char*)board)[ii*DIM+jj]);
                     }
                     printf("\n");
                 }
@@ -274,7 +274,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             printf("Local Matrix:\n");
             for (int ii=0; ii<BLOCKSIZE; ii++) {
                 for (int jj=0; jj<BLOCKSIZE; jj++) {
-                    printf("%3d ",(int)b[ii*BLOCKSIZE+jj]);
+                    printf("%3d ", block[ii*BLOCKSIZE+jj]);
                 }
                 printf("\n");
             }
