@@ -264,17 +264,17 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             printf("Rank = %d\n", rank);
             if (rank == 0) {
                 printf("Global matrix: \n");
-                for (int ii=0; ii<ROWS; ii++) {
-                    for (int jj=0; jj<COLS; jj++) {
-                        printf("%3d ",(int)a[ii*COLS+jj]);
+                for (int ii=0; ii<DIM; ii++) {
+                    for (int jj=0; jj<DIM; jj++) {
+                        printf("%3d ",(int)a[ii*DIM+jj]);
                     }
                     printf("\n");
                 }
             }
             printf("Local Matrix:\n");
-            for (int ii=0; ii<BLOCKROWS; ii++) {
-                for (int jj=0; jj<BLOCKCOLS; jj++) {
-                    printf("%3d ",(int)b[ii*BLOCKCOLS+jj]);
+            for (int ii=0; ii<BLOCKSIZE; ii++) {
+                for (int jj=0; jj<BLOCKSIZE; jj++) {
+                    printf("%3d ",(int)b[ii*BLOCKSIZE+jj]);
                 }
                 printf("\n");
             }
