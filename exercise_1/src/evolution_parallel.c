@@ -259,15 +259,39 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
     for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
 
+    for (int proc=0; proc<num_proc; proc++) {
+        if (proc == rank) {
+            printf("Rank = %d\n", rank);
+            if (rank == 0) {
+                printf("Global matrix: \n");
+                for (int ii=0; ii<ROWS; ii++) {
+                    for (int jj=0; jj<COLS; jj++) {
+                        printf("%3d ",(int)a[ii*COLS+jj]);
+                    }
+                    printf("\n");
+                }
+            }
+            printf("Local Matrix:\n");
+            for (int ii=0; ii<BLOCKROWS; ii++) {
+                for (int jj=0; jj<BLOCKCOLS; jj++) {
+                    printf("%3d ",(int)b[ii*BLOCKCOLS+jj]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+
     /* evolution */
     // #pragma omp parallel for collapse(3)
     for(int s=0; s<STEPS; s++){
         /* propagate rows */
         if((rank/NDEC)%2 == 0){
+
+            // printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
+
             /* send top row */
-
-            printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
-
             MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             /* send bottom row */
@@ -275,7 +299,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
             
-            printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
+            // printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
 
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
