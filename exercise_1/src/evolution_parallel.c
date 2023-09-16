@@ -320,12 +320,20 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block + NDEC*NDEC - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
         }
 
-        if(rank == 0){
+        if(rank == 2){
             printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
             printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
             printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
             printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
         }
+
+	if(rank == 3){
+            printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
+            printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
+            printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
+            printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
+        }
+
 
         if(rank == 0){
             printf("before fisrt pass: \n");
