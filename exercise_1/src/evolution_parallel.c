@@ -23,26 +23,106 @@
  */
 char check_neighbours(const void* board, const int DIM, const int i, const int j, 
                       const char t_l, const char* top, const char t_r, const char* left, 
-                      const char* right, const char b_l, const char* bottom, const char b_r){
+                      const char* right, const char b_l, const char* bottom, const char b_r, int rank){
     const int off_sets[NUM_NEIGHBOURS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
                                                   {0, -1},                       {0, 1},
                                                   {1, -1},  {1, 0},  {1, 1}};
     unsigned int count=0;    /* number of alive cells around the ij-th */
 
+    // if(rank == 0){
+    //     printf("neighbours of board[%d][%d] = %d\n", i, j, ((unsigned char*)board)[i*DIM + j]);
+    // }
 
     /* inner cell */
     if(i == 0 || j == 0 || i == DIM-1 || j == DIM-1){
-        for(int z=0; z<NUM_NEIGHBOURS; z++)
+        for(int z=0; z<NUM_NEIGHBOURS; z++){
+            // if(rank == 0){
+            //     int k = i + off_sets[z][0];
+            //     int l = j + off_sets[z][1];
+            //     printf("board[%d][%d] = %d\n", k, l, ((unsigned char*)board)[k*DIM + l]);
+            // }
             if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+        }
     }else {     /* outer cell */
-        count += (int)t_l >= 128 ? 1 : 0;
-        count += (int)top[j] >= 128 ? 1 : 0;
-        count += (int)t_r >= 128 ? 1 : 0;
-        count += (int)left[i] >= 128 ? 1 : 0;
-        count += (int)right[i] >= 128 ? 1 : 0;
-        count += (int)b_l >= 128 ? 1 : 0;
-        count += (int)bottom[j] >= 128 ? 1 : 0;
-        count += (int)b_r >= 128 ? 1 : 0;
+        if(i == 0){
+            if(j == 0){
+                count += (int)t_l >= 128 ? 1 : 0;
+                count += (int)top[0] >= 128 ? 1 : 0;
+                count += (int)top[1] >= 128 ? 1 : 0;
+                count += (int)left[0] >= 128 ? 1 : 0;
+                count += ((unsigned char*)board)[(i + off_sets[4][0])*DIM + (j + off_sets[4][1])] >= 128 ? 1 : 0;
+                count += (int)left[1] >= 128 ? 1 : 0;
+                for(int z=6; z<NUM_NEIGHBOURS; z++)
+                    if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+            }else{
+                if(j == DIM-1){
+                    count += (int)top[DIM-2] >= 128 ? 1 : 0;
+                    count += (int)top[DIM-1] >= 128 ? 1 : 0;
+                    count += (int)t_r >= 128 ? 1 : 0;
+                    count += ((unsigned char*)board)[(i + off_sets[3][0])*DIM + (j + off_sets[3][1])] >= 128 ? 1 : 0;
+                    count += (int)right[0] >= 128 ? 1 : 0;
+                    for(int z=5; z<NUM_NEIGHBOURS-1; z++)
+                        if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                    count += (int)right[1] >= 128 ? 1 : 0;
+                }else{
+                    count += (int)top[j-1] >= 128 ? 1 : 0;
+                    count += (int)top[j] >= 128 ? 1 : 0;
+                    count += (int)top[j+1] >= 128 ? 1 : 0;
+                    for(int z=3; z<NUM_NEIGHBOURS; z++)
+                        if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                }
+            }
+        }else{
+            if(i == DIM-1){
+                if(j == 0){
+                    count += (int)left[DIM-2] >= 128 ? 1 : 0;
+                    for(int z=1; z<3; z++)
+                        if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                    count += (int)left[DIM-1] >= 128 ? 1 : 0;
+                    count += ((unsigned char*)board)[(i + off_sets[4][0])*DIM + (j + off_sets[4][1])] >= 128 ? 1 : 0;
+                    count += (int)b_l >= 128 ? 1 : 0;
+                    count += (int)bottom[0] >= 128 ? 1 : 0;
+                    count += (int)bottom[1] >= 128 ? 1 : 0;
+                }else{
+                    if(j == DIM-1){
+                        for(int z=0; z<2; z++)
+                            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                        count += (int)right[DIM-2] >= 128 ? 1 : 0;
+                        count += ((unsigned char*)board)[(i + off_sets[3][0])*DIM + (j + off_sets[3][1])] >= 128 ? 1 : 0;
+                        count += (int)right[DIM-1] >= 128 ? 1 : 0;
+                        count += (int)bottom[DIM-2] >= 128 ? 1 : 0;
+                        count += (int)bottom[DIM-1] >= 128 ? 1 : 0;
+                        count += (int)b_r >= 128 ? 1 : 0;
+                    }else{
+                        for(int z=0; z<5; z++)
+                            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                        count += (int)bottom[j-1] >= 128 ? 1 : 0;
+                        count += (int)bottom[j] >= 128 ? 1 : 0;
+                        count += (int)bottom[j+1] >= 128 ? 1 : 0;
+                    }
+                }
+            }else{
+                if(j == 0){
+                    count += (int)left[i-1] >= 128 ? 1 : 0;
+                    for(int z=1; z<3; z++)
+                        if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                    count += (int)left[i] >= 128 ? 1 : 0;
+                    count += ((unsigned char*)board)[(i + off_sets[4][0])*DIM + (j + off_sets[4][1])] >= 128 ? 1 : 0;
+                    count += (int)left[i+1] >= 128 ? 1 : 0;
+                    for(int z=6; z<NUM_NEIGHBOURS; z++)
+                        if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                }else{
+                    for(int z=0; z<2; z++)
+                        if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                    count += (int)right[i-1] >= 128 ? 1 : 0;
+                    count += ((unsigned char*)board)[(i + off_sets[3][0])*DIM + (j + off_sets[3][1])] >= 128 ? 1 : 0;
+                    count += (int)right[i] >= 128 ? 1 : 0;
+                    for(int z=5; z<7; z++)
+                        if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                    count += (int)right[i+1] >= 128 ? 1 : 0;
+                }
+            }
+        }
     }
 
     return count == 2 || count == 3 ? 1 : 0;    /* if 2 or 3 neighbour cells are alive, 
@@ -245,7 +325,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
 
         for(int i=0; i<BLOCKSIZE; i++){
             for(int j=0; j<BLOCKSIZE; j++){
-                if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right) == 1){ /* cell will be or remain alive */
+                if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, rank) == 1){ /* cell will be or remain alive */
                     if(*(((unsigned char*)block) + i*BLOCKSIZE + j) <= 127){  /* cell is currently dead */
                         *(((unsigned char*)block) + i*BLOCKSIZE + j) = 127;
                     }
