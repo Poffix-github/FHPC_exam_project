@@ -74,5 +74,15 @@ int main(){
         MPI_Barrier(MPI_COMM_WORLD);
     }
 
+    MPI_Gatherv(chunk, BLOCKSIZE*BLOCKSIZE, MPI_CHAR, board, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    printf("Global matrix: \n");
+    for (int ii=0; ii<SIZE; ii++) {
+        for (int jj=0; jj<SIZE; jj++) {
+            printf("%3d ",(int)board[ii*SIZE+jj]);
+        }
+        printf("\n");
+    }
+
     MPI_Finalize();
 }
