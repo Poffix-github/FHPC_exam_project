@@ -24,4 +24,4 @@ void *random_board(const int size, char *string);
 
 void save_snap(void* board, const int size, const int maxval, const int num);
 
-void print_board_minimal(const char* board, const int dim);
+void print_board_minimal(const unsigned char* board, const int dim);
