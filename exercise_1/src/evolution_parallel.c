@@ -259,49 +259,49 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
     for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
     for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
 
-    for (int proc=0; proc<num_proc; proc++) {
-        if (proc == rank) {
-            printf("Rank = %d\n", rank);
-            if (rank == 0) {
-                printf("Global matrix: \n");
-                for (int ii=0; ii<DIM; ii++) {
-                    for (int jj=0; jj<DIM; jj++) {
-                        printf("%3d ",((unsigned char*)board)[ii*DIM+jj]);
-                    }
-                    printf("\n");
-                }
-            }
-            printf("Local Matrix:\n");
-            for (int ii=0; ii<BLOCKSIZE; ii++) {
-                for (int jj=0; jj<BLOCKSIZE; jj++) {
-                    printf("%3d ", block[ii*BLOCKSIZE+jj]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-        MPI_Barrier(MPI_COMM_WORLD);
-    }
+    // for (int proc=0; proc<num_proc; proc++) {
+    //     if (proc == rank) {
+    //         printf("Rank = %d\n", rank);
+    //         if (rank == 0) {
+    //             printf("Global matrix: \n");
+    //             for (int ii=0; ii<DIM; ii++) {
+    //                 for (int jj=0; jj<DIM; jj++) {
+    //                     printf("%3d ",((unsigned char*)board)[ii*DIM+jj]);
+    //                 }
+    //                 printf("\n");
+    //             }
+    //         }
+    //         printf("Local Matrix:\n");
+    //         for (int ii=0; ii<BLOCKSIZE; ii++) {
+    //             for (int jj=0; jj<BLOCKSIZE; jj++) {
+    //                 printf("%3d ", block[ii*BLOCKSIZE+jj]);
+    //             }
+    //             printf("\n");
+    //         }
+    //         printf("\n");
+    //     }
+    //     MPI_Barrier(MPI_COMM_WORLD);
+    // }
 
     /* evolution */
     // #pragma omp parallel for collapse(3)
     for(int s=0; s<STEPS; s++){
 
-        for(int p=0; p<num_proc; p++){
-            if(rank == p){
-                printf("rank %d\ntop row: ", rank);
-                for(int i=0; i<BLOCKSIZE; i++){
-                    printf("%d ", block[i]);
-                }
-                printf("\nbottom row: ");
-                unsigned char *last_r = block + (BLOCKSIZE*(BLOCKSIZE-1));
-                for(int i=0; i<BLOCKSIZE; i++){
-                    printf("%d ", last_r[i]);
-                }
-                printf("\n");
-            }
-            MPI_Barrier(MPI_COMM_WORLD);
-        }
+        // for(int p=0; p<num_proc; p++){
+        //     if(rank == p){
+        //         printf("rank %d\ntop row: ", rank);
+        //         for(int i=0; i<BLOCKSIZE; i++){
+        //             printf("%d ", block[i]);
+        //         }
+        //         printf("\nbottom row: ");
+        //         unsigned char *last_r = block + (BLOCKSIZE*(BLOCKSIZE-1));
+        //         for(int i=0; i<BLOCKSIZE; i++){
+        //             printf("%d ", last_r[i]);
+        //         }
+        //         printf("\n");
+        //     }
+        //     MPI_Barrier(MPI_COMM_WORLD);
+        // }
 
         /* propagate rows */
         if((rank/NDEC)%2 == 0){
@@ -313,14 +313,14 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             /* send bottom row */
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
             // printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
 
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
         }
         /* propagate coloumns */
@@ -366,19 +366,16 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block + NDEC*NDEC - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(rank, NDEC), 0, MPI_COMM_WORLD);
         }
 
-        // if(rank == 2){
-        //     printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
-        //     printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
-        //     printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
-        //     printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
-        // }
-
-	    // if(rank == 3){
-        //     printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
-        //     printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
-        //     printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
-        //     printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
-        // }
+        for(int p=0; p<num_proc; p++){
+            if(rank == p){
+                printf("rank %d\n", rank);
+                printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
+                printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
+                printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
+                printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
+            }
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
 
 
         // if(rank == 0){
