@@ -298,7 +298,9 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
                 for(int i=0; i<BLOCKSIZE; i++){
                     printf("%d ", last_r[i]);
                 }
+                printf("\n");
             }
+            MPI_Barrier(MPI_COMM_WORLD);
         }
 
         /* propagate rows */
