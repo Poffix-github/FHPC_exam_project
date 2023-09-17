@@ -290,7 +290,19 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
         if((rank/NDEC)%2 == 0){
 
             // printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
-
+            for(p=0; p<num_proc; p++){
+                if(rank == p){
+                    printf("rank %d\ntop row:\n", rank);
+                    for(int i=0; i<BLOCKSIZE; i++){
+                        printf("%d ", block[i]);
+                    }
+                    printf("\nbottom row: \n");
+                    unsigned char *last_r = block + (BLOCKSIZE*(BLOCKSIZE-1));
+                    for(int i=0; i<BLOCKSIZE; i++){
+                        printf("%d ", last_r[i]);
+                    }
+                }
+            }
             /* send top row */
             MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
@@ -298,7 +310,19 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int max
             MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
         }else{
-            
+            for(p=0; p<num_proc; p++){
+                if(rank == p){
+                    printf("rank %d\ntop row:\n", rank);
+                    for(int i=0; i<BLOCKSIZE; i++){
+                        printf("%d ", block[i]);
+                    }
+                    printf("\nbottom row: \n");
+                    unsigned char *last_r = block + (BLOCKSIZE*(BLOCKSIZE-1));
+                    for(int i=0; i<BLOCKSIZE; i++){
+                        printf("%d ", last_r[i]);
+                    }
+                }
+            }
             // printf("rank: %d,    top: %d,    bottom: %d\n", rank, top_block(rank, NDEC), bottom_block(rank, NDEC));
 
             MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(rank, NDEC), 0, MPI_COMM_WORLD, &status);
