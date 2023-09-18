@@ -84,7 +84,10 @@ int main( int argc, char **argv )
                     }
 
                     /* swap endianism */
-                    if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
+                    if ( LITTLE_ENDIAN ){
+                        printf("entrando in swap\n");
+                        swap_image( board, size, size, maxval);
+                    }
                     printf("start evolution\n");
 
                     for (int ii=0; ii<size; ii++) {

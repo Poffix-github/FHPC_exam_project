@@ -156,6 +156,7 @@ void swap_image( void *image, int xsize, int ysize, int maxval )
  *
  */
 {
+  printf("in swap\n");
   if ( maxval > 255 )
     {
       // pgm files has the short int written in
