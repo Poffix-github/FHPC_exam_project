@@ -24,7 +24,7 @@
  */
 char check_neighbours(const void* board, const int DIM, const int i, const int j, 
                       const unsigned char t_l, const unsigned char* top, const unsigned char t_r, const unsigned char* left, 
-                      const unsigned char* right, const unsigned char b_l, const unsigned char* bottom, const unsigned char b_r){
+                      const unsigned char* right, const unsigned char b_l, const unsigned char* bottom, const unsigned char b_r, const int RANK){
     const int off_sets[NUM_NEIGHBOURS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
                                              {0, -1},                       {0, 1},
                                              {1, -1},  {1, 0},  {1, 1}};
@@ -106,6 +106,8 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
             if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
         if(right[i+1] >= 128) count++;
     }   
+
+    if(RANK == 0) printf("board[%d][%d] count = %d\n",i,j,count);
 
     return count == 2 || count == 3 ? 1 : 0;    /* if 2 or 3 neighbour cells are alive, 
                                                  * the current cell has to become, or remain, alive; 
@@ -346,38 +348,37 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         }
 
         // for(int p=0; p<NUM_PROC; p++){
-        //     if(RANK == p){
-        //         printf("RANK %d\n", RANK);
-        //         printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
-        //         printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
-        //         printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
-        //         printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
-        //     }
-        //     MPI_Barrier(MPI_COMM_WORLD);
+            if(RANK == 0){
+                printf("RANK %d\n", RANK);
+                printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
+                printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
+                printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
+                printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
+            }
+            // MPI_Barrier(MPI_COMM_WORLD);
         // }
 
-        // #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
-        // {
-            #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
+        #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
+        {
+            printf("ciao sono il thread %d", omp_get_thread_num());
+            #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
-                    if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right) == 1) /* cell will be or remain alive */
+                    if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1) /* cell will be or remain alive */
                         if(*(((unsigned char*)block) + i*BLOCKSIZE + j) <= 127) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 127;
                     else if(*(((unsigned char*)block) + i*BLOCKSIZE + j) >= 128) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 128;
 
                 }
             }
-
-
             
-            #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, block)
+            #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
                     if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 127) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 255;
                     else if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 128) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 0;
                 }
             }
-        // }
+        }
         
 
         if(s % SAVE == 0){
