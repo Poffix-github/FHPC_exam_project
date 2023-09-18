@@ -1,7 +1,6 @@
 #include <gol.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <mpi.h>
 #include <omp.h>
 
@@ -19,6 +18,7 @@
  * ==================================================
  */
 #define NUM_NEIGHBOURS 8
+#define NUM_BPR 2
 
 /* Count the number of alive neighbours 
  */
@@ -197,7 +197,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
      * */
     
     /* partition grid into blocks and scatter them through the processes*/
-    const int NDEC = DIM/(int)sqrt(NUM_PROC); /* number of blocks in a coloumn and in a row in decomposition */
+    const int NDEC = NUM_BPR; /* number of blocks in a coloumn and in a row in decomposition */
     const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
 
     if(NUM_PROC != NDEC*NDEC){
