@@ -101,7 +101,7 @@ int main( int argc, char **argv )
     MPI_Barrier(MPI_COMM_WORLD);
     if(rank == 0){
         end = omp_get_wtime();
-        update_data(size, num_proc, omp_get_num_threads(), start, end);
+        update_data(k, num_proc, omp_get_num_threads(), start, end);
     }
 
     MPI_Finalize();
