@@ -432,6 +432,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     if(RANK == 0){
         tend = MPI_Wtime();
         *evo_T = get_time(tbegin, tend);
-        *avg_propT = tprop/STEPS;
+        *avg_propT = (int)tprop/STEPS;
     }
 }
