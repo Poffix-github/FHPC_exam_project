@@ -78,12 +78,19 @@ int main( int argc, char **argv )
             case -3: printf("I/O error in body\n"); break;
             default:
                 if(rank == 0){
-                    /* swap endianism */
-                    if ( LITTLE_ENDIAN ){
-                        printf("sono little endian\n");
-                        swap_image( board, size, size, maxval);
+                    for (int ii=0; ii<size; ii++) {
+                        for (int jj=0; jj<size; jj++) printf("%3d ",((unsigned char*)board)[ii*size+jj]);
+                        printf("\n");
                     }
+
+                    /* swap endianism */
+                    if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
                     printf("start evolution\n");
+
+                    for (int ii=0; ii<size; ii++) {
+                        for (int jj=0; jj<size; jj++) printf("%3d ",((unsigned char*)board)[ii*size+jj]);
+                        printf("\n");
+                    }
                 }
                 
                 if( e == ORDERED ){

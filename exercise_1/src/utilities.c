@@ -76,7 +76,7 @@ void *random_board(const int size, char *string){
     board = (char*)calloc( size*size, sizeof(char) );
     
     srand(easy_seed(string));
-    #pragma omp parallel shared(board, size)
+    // #pragma omp parallel shared(board, size)
     {
         const int THREAD_NUM = omp_get_thread_num();
         srand(easy_seed(string)*THREAD_NUM);

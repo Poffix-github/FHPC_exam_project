@@ -139,7 +139,7 @@ char check_neighbours_ord(const void* board, const int dim, const int i, const i
  */
 void evolution_ordered(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE){
     for(int s=0; s<STEPS; s++){
-        #pragma omp parallel for schedule(static) collapse(2) shared(DIM, board)
+        // #pragma omp parallel for schedule(static) collapse(2) shared(DIM, board)
         for(int i=0; i<DIM; i++){
             for(int j=0; j<DIM; j++){
                 if(check_neighbours_ord(board, DIM, i, j) == 1){
@@ -207,7 +207,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     }
 
     unsigned char block[BLOCKSIZE*BLOCKSIZE];
-    #pragma omp parallel for schedule(static) shared(BLOCKSIZE)
+    //#pragma omp parallel for schedule(static) shared(BLOCKSIZE)
     for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) block[ii] = 0;
 
     MPI_Datatype blocktype;
@@ -219,7 +219,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     int disps[NDEC*NDEC];
     int counts[NDEC*NDEC];
-    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDEC, disps, counts)
+    //#pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDEC, disps, counts)
     for (int ii=0; ii<NDEC; ii++) {
         for (int jj=0; jj<NDEC; jj++) {
             disps[ii*NDEC+jj] = ii*DIM*BLOCKSIZE+jj*BLOCKSIZE;
@@ -237,15 +237,15 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     unsigned char temp[BLOCKSIZE];
     unsigned char top_left, top_right, btm_left, btm_right;
 
-    #pragma omp parallel
+    // #pragma omp parallel
     {
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, btm_row)
+        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, btm_row)
         for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, top_row)
+        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, top_row)
         for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, left_clmn)
+        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, left_clmn)
         for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, right_clmn)
+        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, right_clmn)
         for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
     }
 
@@ -322,7 +322,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         //     MPI_Barrier(MPI_COMM_WORLD);
         // }
 
-        #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
+        // #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
         {
             #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
