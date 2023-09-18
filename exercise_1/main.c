@@ -23,8 +23,7 @@ int   n      = 10000;
 int   s      = 1;
 char *fname  = NULL;
 
-void update_data(const int size, const int steps, const int evo, const int num_proc, const int num_threads, 
-                 const int tot_time, const int evo_time, const int avg_propT);
+void update_data(const int size, const int steps, const int evo, const int num_proc, const int num_threads, const int tot_time, const int evo_time, const int avg_propT);
 
 int main( int argc, char **argv )
 {    
@@ -109,8 +108,7 @@ int main( int argc, char **argv )
     MPI_Finalize();
 }
 
-void update_data(const int size, const int steps, const int evo, const int num_proc, const int num_threads, 
-                 const int tot_time, const int evo_time, const int avg_propT){
+void update_data(const int size, const int steps, const int evo, const int num_proc, const int num_threads, const int tot_time, const int evo_time, const int avg_propT){
     FILE *data_file;
 
     data_file = fopen("./data.csv", "a");
