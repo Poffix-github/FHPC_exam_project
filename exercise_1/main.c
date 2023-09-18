@@ -23,7 +23,7 @@ int   n      = 10000;
 int   s      = 1;
 char *fname  = NULL;
 
-
+void update_data(const int size, const int num_proc, const int num_threads, const double start, const double end);
 
 int main( int argc, char **argv )
 {    
