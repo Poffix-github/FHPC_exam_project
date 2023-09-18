@@ -28,7 +28,8 @@ void update_data(const int size, const int steps, const int evo, const int num_p
 
 int main( int argc, char **argv )
 {    
-    int num_proc, rank, mpi_provided_thread_level, evo_time;
+    int num_proc, rank, mpi_provided_thread_level;
+    int* evo_time;
 
     double tstart, tend;
 
@@ -115,7 +116,7 @@ void update_data(const int size, const int steps, const int evo, const int num_p
 
     data_file = fopen("./data.csv", "a");
 
-    fprintf(data_file, "%d,%d,%d,%d,%d,%d,%d\n", size, steps, evo num_proc, num_threads, tot_time, evo_time, avg_propT);
+    fprintf(data_file, "%d,%d,%d,%d,%d,%d,%d\n", size, steps, evo, num_proc, num_threads, tot_time, evo_time, avg_propT);
 
     fclose(data_file);
 }

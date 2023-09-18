@@ -192,7 +192,7 @@ int btm_right_blk(const int RANK, const int NDEC){
 /* Evolves the whole board once. 
  * The evolution is static, meaning the evaluation of the board is disentangled from the update. 
  */
-int evolution_static(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK){
+int* evolution_static(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK){
     /* Options:
      * - save list of cells to modify;
      * - mark cells to be modified;
@@ -291,7 +291,7 @@ int evolution_static(void* board, const int DIM, const int STEPS, const int MAXV
 
     /* evolution */
     for(int s=0; s<STEPS; s++){
-        
+
         if(RANK == 0) tpstart = MPI_Wtime();
 
         /* propagate rows */

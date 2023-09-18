@@ -4,7 +4,7 @@
 
 void evolution_ordered(void* board, const int dim, const int steps, const int maxval, const int save);
 
-int evolution_static(void* board, const int DIM, const int STEPS, const int maxval, const int SAVE, const int num_proc, const int rank);
+int* evolution_static(void* board, const int DIM, const int STEPS, const int maxval, const int SAVE, const int num_proc, const int rank);
 
 
 /* read_write_pgm_image_parallel.c */
