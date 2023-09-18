@@ -23,7 +23,7 @@ int   n      = 10000;
 int   s      = 1;
 char *fname  = NULL;
 
-void update_data(const int size, const int num_proc, const int num_threads, const double time);
+void update_data(const int size, const int num_proc, const int num_threads, const int time);
 int get_time(double tbegin, double tend);
 
 int main( int argc, char **argv )
