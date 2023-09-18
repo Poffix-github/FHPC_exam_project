@@ -207,8 +207,14 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     }
 
     unsigned char block[BLOCKSIZE*BLOCKSIZE];
-    //#pragma omp parallel for schedule(static) shared(BLOCKSIZE)
+    #pragma omp parallel for schedule(static) shared(BLOCKSIZE)
     for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) block[ii] = 0;
+
+    if(RANK == 0){
+        printf("block inizializzato\n");
+        for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) printf("%d ",block[ii]);
+        printf("\n");
+    }
 
     MPI_Datatype blocktype;
     MPI_Datatype blocktype2;
@@ -219,12 +225,22 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     int disps[NDEC*NDEC];
     int counts[NDEC*NDEC];
-    //#pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDEC, disps, counts)
+    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDEC, disps, counts)
     for (int ii=0; ii<NDEC; ii++) {
         for (int jj=0; jj<NDEC; jj++) {
             disps[ii*NDEC+jj] = ii*DIM*BLOCKSIZE+jj*BLOCKSIZE;
             counts [ii*NDEC+jj] = 1;
         }
+    }
+
+    if(RANK == 0){
+        printf("displacement initialized\n");
+        for (int i=0; i<NDEC*NDEC; i++) printf("%d ", disps[i]); /*0, 2, 8, 10*/
+        printf("\n");
+
+        printf("counts initialized\n");
+        for (int i=0; i<NDEC*NDEC; i++) printf("%d ", counts[i]);
+        printf("\n");
     }
 
     MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
@@ -237,16 +253,34 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     unsigned char temp[BLOCKSIZE];
     unsigned char top_left, top_right, btm_left, btm_right;
 
-    // #pragma omp parallel
+    #pragma omp parallel
     {
-        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, btm_row)
+        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, btm_row)
         for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
-        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, top_row)
+        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, top_row)
         for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
-        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, left_clmn)
+        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, left_clmn)
         for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
-        // #pragma omp parallel for schedule(static) shared(BLOCKSIZE, right_clmn)
+        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, right_clmn)
         for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
+    }
+
+    if(RANK == 0){
+        printf("btm_row initialized\n");
+        for (int i=0; i<BLOCKSIZE; i++) printf("%d ", btm_row[i]);
+        printf("\n");
+
+        printf("top_row initialized\n");
+        for (int i=0; i<BLOCKSIZE; i++) printf("%d ", top_row[i]);
+        printf("\n");
+
+        printf("left_clmn initialized\n");
+        for (int i=0; i<BLOCKSIZE; i++) printf("%d ", left_clmn[i]);
+        printf("\n");
+        
+        printf("right_clmn initialized\n");
+        for (int i=0; i<BLOCKSIZE; i++) printf("%d ", right_clmn[i]);
+        printf("\n");   
     }
 
     /* evolution */
@@ -324,7 +358,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
         // #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
         {
-            #pragma omp for schedule(static) collapse(2)
+            // #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
                     if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right) == 1) /* cell will be or remain alive */
@@ -334,7 +368,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
                 }
             }
             
-            #pragma omp for schedule(static) collapse(2)
+            // #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
                     if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 127) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 255;

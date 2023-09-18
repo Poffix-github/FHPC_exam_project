@@ -156,7 +156,6 @@ void swap_image( void *image, int xsize, int ysize, int maxval )
  *
  */
 {
-  printf("in swap\n");
   if ( maxval > 255 )
     {
       // pgm files has the short int written in
@@ -167,7 +166,6 @@ void swap_image( void *image, int xsize, int ysize, int maxval )
       unsigned int size = xsize * ysize;
       #pragma omp parallel for schedule(static) shared(size, image)
       for ( int i = 0; i < size; i++ ){
-        printf("ciao sono il thread %d", omp_get_thread_num());
   	    ((unsigned short int*)image)[i] = swap(((unsigned short int*)image)[i]);
       }
     }
