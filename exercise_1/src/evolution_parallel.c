@@ -429,9 +429,9 @@ int* evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
         }
     }
-    if(rank == 0){
-        tbegin = MPI_Wtime();
-        tevo[0] = get_time(tstart, tend);
+    if(RANK == 0){
+        tend = MPI_Wtime();
+        tevo[0] = get_time(tbegin, tend);
         tevo[1] = tprop/STEPS;
     }
     return tevo;
