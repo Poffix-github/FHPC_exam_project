@@ -24,7 +24,7 @@ int   s      = 1;
 char *fname  = NULL;
 
 void update_data(const int size, const int num_proc, const int num_threads, const double time);
-int print_time(double tbegin, double tend);
+int get_time(double tbegin, double tend);
 
 int main( int argc, char **argv )
 {    
