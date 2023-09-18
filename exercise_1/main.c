@@ -27,9 +27,16 @@ char *fname  = NULL;
 
 int main( int argc, char **argv )
 {    
-    int num_proc, rank;
+    int num_proc, rank, mpi_provided_thread_level;
 
-    MPI_Init(NULL,NULL);
+    MPI_Init_thread(NULL,NULL, MPI_THREAD_FUNNELED, &mpi_provided_thread_level);
+
+    if ( mpi_provided_thread_level < MPI_THREAD_FUNNELED ) {
+        printf("a problem arise when asking for MPI_THREAD_FUNNELED level\n");
+        MPI_Finalize();
+        exit( 1 );
+    }
+
     MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
