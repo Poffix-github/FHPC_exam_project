@@ -28,8 +28,7 @@ void update_data(const int size, const int steps, const int evo, const int num_p
 
 int main( int argc, char **argv )
 {    
-    int num_proc, rank, mpi_provided_thread_level;
-    int* evo_time;
+    int num_proc, rank, mpi_provided_thread_level, evo_time, avg_propT;
 
     double tstart, tend;
 
@@ -91,7 +90,7 @@ int main( int argc, char **argv )
                 if( e == ORDERED ){
                     if(rank == 0) evolution_ordered(board, size, n, maxval, s);
                 }else{ 
-                    evo_time = evolution_static(board, size, n, maxval, s, num_proc, rank);
+                    evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
                 }
         }
         
@@ -100,7 +99,7 @@ int main( int argc, char **argv )
         MPI_Barrier(MPI_COMM_WORLD);
         if(rank == 0){
             tend = MPI_Wtime();
-            update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time[0], evo_time[1]);
+            update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
         }
     }
     
