@@ -360,7 +360,16 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
         #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
         {
-            printf("ciao sono il thread %d", omp_get_thread_num());
+            if(RANK == 0) printf("ciao sono il thread %d\n", omp_get_thread_num());
+            if(RANK == 0){
+                for(int i=0; i<BLOCKSIZE; i++){
+                    for(int j=0; j<BLOCKSIZE; j++){
+                        printf("%d ", block[i*BLOCKSIZE+j]);
+                    }
+                    printf("\n");
+                }
+            }
+            
             #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
@@ -370,12 +379,30 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
                 }
             }
+
+            if(RANK == 0){
+                for(int i=0; i<BLOCKSIZE; i++){
+                    for(int j=0; j<BLOCKSIZE; j++){
+                        printf("%d ", block[i*BLOCKSIZE+j]);
+                    }
+                    printf("\n");
+                }
+            }
             
             #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
                     if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 127) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 255;
                     else if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 128) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 0;
+                }
+            }
+
+            if(RANK == 0){
+                for(int i=0; i<BLOCKSIZE; i++){
+                    for(int j=0; j<BLOCKSIZE; j++){
+                        printf("%d ", block[i*BLOCKSIZE+j]);
+                    }
+                    printf("\n");
                 }
             }
         }
