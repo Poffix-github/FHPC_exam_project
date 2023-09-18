@@ -138,8 +138,8 @@ char check_neighbours_ord(const void* board, const int dim, const int i, const i
  * The evolution is ordered, meaning by row and from the top left cell.
  */
 void evolution_ordered(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE){
-    #pragma omp parallel for collapse(3)
     for(int s=0; s<STEPS; s++){
+        #pragma omp parallel for schedule(static) collapse(2) shared(DIM, board)
         for(int i=0; i<DIM; i++){
             for(int j=0; j<DIM; j++){
                 if(check_neighbours_ord(board, DIM, i, j) == 1){
@@ -219,7 +219,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     int disps[NDEC*NDEC];
     int counts[NDEC*NDEC];
-    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDECm, disps, counts)
+    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDEC, disps, counts)
     for (int ii=0; ii<NDEC; ii++) {
         for (int jj=0; jj<NDEC; jj++) {
             disps[ii*NDEC+jj] = ii*DIM*BLOCKSIZE+jj*BLOCKSIZE;
