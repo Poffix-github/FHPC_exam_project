@@ -79,7 +79,10 @@ int main( int argc, char **argv )
             default:
                 if(rank == 0){
                     /* swap endianism */
-                    if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
+                    if ( LITTLE_ENDIAN ){
+                        printf("sono little endian\n");
+                        swap_image( board, size, size, maxval);
+                    }
                     printf("start evolution\n");
                 }
                 
