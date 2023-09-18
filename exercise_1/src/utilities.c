@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
+#include <math.h>
 #include <gol.h>
 #include <omp.h>
 
