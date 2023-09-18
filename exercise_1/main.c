@@ -109,12 +109,12 @@ int main( int argc, char **argv )
     MPI_Finalize();
 }
 
-void update_data(const int size, const int num_proc, const int num_threads, const double time){
+void update_data(const int size, const int num_proc, const int num_threads, const int time){
     FILE *data_file;
 
     data_file = fopen("./data.csv", "a");
 
-    fprintf(data_file, "%d,%d,%d,%lf\n", size, num_proc, num_threads, time);
+    fprintf(data_file, "%d,%d,%d,%8d\n", size, num_proc, num_threads, time);
 
     fclose(data_file);
 }
