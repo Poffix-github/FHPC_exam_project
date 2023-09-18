@@ -369,13 +369,15 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
                     printf("\n");
                 }
             }
-            
+
             #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKSIZE; i++){
                 for(int j=0; j<BLOCKSIZE; j++){
-                    if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1) /* cell will be or remain alive */
+                    if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1){ /* cell will be or remain alive */
                         if(*(((unsigned char*)block) + i*BLOCKSIZE + j) <= 127) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 127;
-                    else if(*(((unsigned char*)block) + i*BLOCKSIZE + j) >= 128) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 128;
+                    }else{
+                        if(*(((unsigned char*)block) + i*BLOCKSIZE + j) >= 128) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 128;
+                    }
 
                 }
             }
