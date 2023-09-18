@@ -33,8 +33,6 @@ int main( int argc, char **argv )
 
     MPI_Init_thread(NULL,NULL, MPI_THREAD_FUNNELED, &mpi_provided_thread_level);
 
-    tstart = MPI_Wtime();
-
     if ( mpi_provided_thread_level < MPI_THREAD_FUNNELED ) {
         printf("a problem arise when asking for MPI_THREAD_FUNNELED level\n");
         MPI_Finalize();
@@ -88,16 +86,19 @@ int main( int argc, char **argv )
                 }
                 
                 if( e == ORDERED ){
+                    tstart = MPI_Wtime();
                     if(rank == 0) evolution_ordered(board, size, n, maxval, s);
+                    tend = MPI_Wtime();
                 }else{ 
+                    tstart = MPI_Wtime();
                     evolution_static(board, size, n, maxval, s, num_proc, rank);
+                    tend = MPI_Wtime();
                 }
         }
         
         if(rank == 0) free(board);
     
         MPI_Barrier(MPI_COMM_WORLD);
-        tend = MPI_Wtime();
         if(rank == 0){
             update_data(size, num_proc, omp_get_max_threads(), get_time(tstart, tend));
         }
