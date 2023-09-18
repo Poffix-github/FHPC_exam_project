@@ -105,3 +105,7 @@ void save_snap(void* board, const int size, const int maxval, const int num){
     /* swap endianism */
     if ( LITTLE_ENDIAN ) swap_image( board, size, size, maxval);
 }
+
+int get_time(double tbegin, double tend){
+    return (int)((tend - tbegin)*1000000.0);
+}

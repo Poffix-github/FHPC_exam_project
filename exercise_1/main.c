@@ -24,16 +24,16 @@ int   s      = 1;
 char *fname  = NULL;
 
 void update_data(const int size, const int num_proc, const int num_threads, const int time);
-int get_time(double tbegin, double tend);
 
 int main( int argc, char **argv )
 {    
     int num_proc, rank, mpi_provided_thread_level;
+
     double tstart, tend;
 
     MPI_Init_thread(NULL,NULL, MPI_THREAD_FUNNELED, &mpi_provided_thread_level);
 
-    if(rank == 0) tstart = MPI_Wtime();
+    tstart = MPI_Wtime();
 
     if ( mpi_provided_thread_level < MPI_THREAD_FUNNELED ) {
         printf("a problem arise when asking for MPI_THREAD_FUNNELED level\n");
@@ -42,7 +42,7 @@ int main( int argc, char **argv )
     }
 
     MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if(rank == 0){
         get_args(argc, argv, &action, &k, &e, &n, &s, &fname);
@@ -97,8 +97,8 @@ int main( int argc, char **argv )
         if(rank == 0) free(board);
     
         MPI_Barrier(MPI_COMM_WORLD);
+        tend = MPI_Wtime();
         if(rank == 0){
-            tend = MPI_Wtime();
             update_data(size, num_proc, omp_get_max_threads(), get_time(tstart, tend));
         }
     }
@@ -114,13 +114,9 @@ void update_data(const int size, const int num_proc, const int num_threads, cons
 
     data_file = fopen("./data.csv", "a");
 
-    fprintf(data_file, "%d,%d,%d,%8d\n", size, num_proc, num_threads, time);
+    fprintf(data_file, "%d,%d,%d,%d\n", size, num_proc, num_threads, time);
 
     fclose(data_file);
-}
-
-int get_time(double tbegin, double tend){
-    return (int)((tend - tbegin)*1000000.0);
 }
 
 // for (int ii=0; ii<size; ii++) {
