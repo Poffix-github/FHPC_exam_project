@@ -2,6 +2,7 @@
 #include <gol.h>
 #include <stdlib.h>
 #include <stdio.h> 
+#include <omp.h>
 
 
 #define XWIDTH 256
@@ -163,8 +164,9 @@ void swap_image( void *image, int xsize, int ysize, int maxval )
       // one to another
       //
       unsigned int size = xsize * ysize;
+      #pragma parallel for schedule(static) shared(size, image)
       for ( int i = 0; i < size; i++ )
-  	((unsigned short int*)image)[i] = swap(((unsigned short int*)image)[i]);
+  	    ((unsigned short int*)image)[i] = swap(((unsigned short int*)image)[i]);
     }
   return;
 }

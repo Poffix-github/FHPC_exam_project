@@ -3,6 +3,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <gol.h>
+#include <omp.h>
 
 
 #define INIT 1
@@ -75,10 +76,15 @@ void *random_board(const int size, char *string){
     board = (char*)calloc( size*size, sizeof(char) );
     
     srand(easy_seed(string));
-    for(int i=0; i<size; i++){
-        for(int j=0; j<size; j++){
-            board[i*size +j] = (unsigned char) (rand() % 1001 > p ? 0 : 255); 
-            /* board[i][j] has p/10 chance to be alive */
+    #pragma omp parallel shared(board, size)
+    {
+        srand(easy_seed(string)*omp_get_thread_num());
+        #pragma for schedule(static) collapse(2)
+        for(int i=0; i<size; i++){
+            for(int j=0; j<size; j++){
+                board[i*size +j] = (unsigned char) (rand() % 1001 > p ? 0 : 255); 
+                /* board[i][j] has p/10 chance to be alive */
+            }
         }
     }
     return (void*) board;
