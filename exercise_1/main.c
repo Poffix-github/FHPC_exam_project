@@ -28,8 +28,11 @@ char *fname  = NULL;
 int main( int argc, char **argv )
 {    
     int num_proc, rank, mpi_provided_thread_level;
+    double start, end;
 
     MPI_Init_thread(NULL,NULL, MPI_THREAD_FUNNELED, &mpi_provided_thread_level);
+
+    if(rank == 0) start = omp_get_wtime();
 
     if ( mpi_provided_thread_level < MPI_THREAD_FUNNELED ) {
         printf("a problem arise when asking for MPI_THREAD_FUNNELED level\n");
@@ -95,7 +98,23 @@ int main( int argc, char **argv )
     
     if (rank == 0 && fname != NULL ) free ( fname );
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    if(rank == 0) end = omp_get_wtime();
+
+    update_data(size, num_proc, omp_get_num_threads(), start, end);
+
     MPI_Finalize();
+}
+
+void update_data(const int size, const int num_proc, const int num_threads, const double start, const double end){
+    FILE *data_file;
+
+    data_file = fopen("./data.csv", "a");
+
+    fprintf(data_file, "%d,%d,%d,%lf\n", size, num_proc, num_threads, end-start);
+
+    fclose(data_file);
+
 }
 
 // for (int ii=0; ii<size; ii++) {
