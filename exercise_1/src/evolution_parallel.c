@@ -107,7 +107,7 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
         if(right[i+1] >= 128) count++;
     }   
 
-    if(RANK == 0) printf("board[%d][%d] count = %d\n",i,j,count);
+    // if(RANK == 0) printf("board[%d][%d] count = %d\n",i,j,count);
 
     return count == 2 || count == 3 ? 1 : 0;    /* if 2 or 3 neighbour cells are alive, 
                                                  * the current cell has to become, or remain, alive; 
@@ -348,13 +348,13 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         }
 
         // for(int p=0; p<NUM_PROC; p++){
-            if(RANK == 0){
-                printf("RANK %d\n", RANK);
-                printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
-                printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
-                printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
-                printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
-            }
+            // if(RANK == 0){
+            //     printf("RANK %d\n", RANK);
+            //     printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
+            //     printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
+            //     printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
+            //     printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
+            // }
             // MPI_Barrier(MPI_COMM_WORLD);
         // }
 
@@ -399,14 +399,14 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
                 }
             }
 
-            if(RANK == 0){
-                for(int i=0; i<BLOCKSIZE; i++){
-                    for(int j=0; j<BLOCKSIZE; j++){
-                        printf("%d ", block[i*BLOCKSIZE+j]);
-                    }
-                    printf("\n");
-                }
-            }
+            // if(RANK == 0){
+            //     for(int i=0; i<BLOCKSIZE; i++){
+            //         for(int j=0; j<BLOCKSIZE; j++){
+            //             printf("%d ", block[i*BLOCKSIZE+j]);
+            //         }
+            //         printf("\n");
+            //     }
+            // }
         }
         
 
