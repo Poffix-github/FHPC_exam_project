@@ -23,11 +23,12 @@ int   n      = 10000;
 int   s      = 1;
 char *fname  = NULL;
 
-void update_data(const int size, const int num_proc, const int num_threads, const int time);
+void update_data(const int size, const int steps, const int evo, const int num_proc, const int num_threads, 
+                 const int tot_time, const int evo_time, const int avg_propT);
 
 int main( int argc, char **argv )
 {    
-    int num_proc, rank, mpi_provided_thread_level;
+    int num_proc, rank, mpi_provided_thread_level, evo_time;
 
     double tstart, tend;
 
@@ -83,24 +84,22 @@ int main( int argc, char **argv )
                     /* swap endianism */
                     if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
                     printf("start evolution\n");
+                    tstart = MPI_Wtime();
                 }
                 
                 if( e == ORDERED ){
-                    tstart = MPI_Wtime();
                     if(rank == 0) evolution_ordered(board, size, n, maxval, s);
-                    tend = MPI_Wtime();
                 }else{ 
-                    tstart = MPI_Wtime();
-                    evolution_static(board, size, n, maxval, s, num_proc, rank);
-                    tend = MPI_Wtime();
+                    evo_time = evolution_static(board, size, n, maxval, s, num_proc, rank);
                 }
         }
         
         if(rank == 0) free(board);
-    
+
         MPI_Barrier(MPI_COMM_WORLD);
         if(rank == 0){
-            update_data(size, num_proc, omp_get_max_threads(), get_time(tstart, tend));
+            tend = MPI_Wtime();
+            update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time[0], evo_time[1]);
         }
     }
     
@@ -110,12 +109,13 @@ int main( int argc, char **argv )
     MPI_Finalize();
 }
 
-void update_data(const int size, const int num_proc, const int num_threads, const int time){
+void update_data(const int size, const int steps, const int evo, const int num_proc, const int num_threads, 
+                 const int tot_time, const int evo_time, const int avg_propT){
     FILE *data_file;
 
     data_file = fopen("./data.csv", "a");
 
-    fprintf(data_file, "%d,%d,%d,%d\n", size, num_proc, num_threads, time);
+    fprintf(data_file, "%d,%d,%d,%d,%d,%d,%d\n", size, steps, evo num_proc, num_threads, tot_time, evo_time, avg_propT);
 
     fclose(data_file);
 }

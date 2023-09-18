@@ -192,7 +192,7 @@ int btm_right_blk(const int RANK, const int NDEC){
 /* Evolves the whole board once. 
  * The evolution is static, meaning the evaluation of the board is disentangled from the update. 
  */
-void evolution_static(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK){
+int evolution_static(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK){
     /* Options:
      * - save list of cells to modify;
      * - mark cells to be modified;
@@ -285,8 +285,14 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     //     printf("\n");   
     // }
 
+    double tbegin, tend, tpstart, tpend;
+    int tevo[2]={0,0}, tprop=0;
+    if(RANK == 0) tbegin = MPI_Wtime();
+
     /* evolution */
     for(int s=0; s<STEPS; s++){
+        
+        if(RANK == 0) tpstart = MPI_Wtime();
 
         /* propagate rows */
         if((RANK/NDEC)%2 == 0){
@@ -358,6 +364,11 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             // MPI_Barrier(MPI_COMM_WORLD);
         // }
 
+        if(RANK == 0){
+            tpend = MPI_Wtime();
+            tprop += get_time(tpstart, tpend);
+        }
+
         #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
         {
             // if(RANK == 0) printf("ciao sono il thread %d\n", omp_get_thread_num());
@@ -418,4 +429,10 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
         }
     }
+    if(rank == 0){
+        tbegin = MPI_Wtime();
+        tevo[0] = get_time(tstart, tend);
+        tevo[1] = tprop/STEPS;
+    }
+    return tevo;
 }
