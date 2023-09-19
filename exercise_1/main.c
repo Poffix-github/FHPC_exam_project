@@ -81,7 +81,7 @@ int main( int argc, char **argv )
             case -3: printf("I/O error in body\n"); break;
             default:
                 /*thread scaling*/
-                for(int i=0; i<6; i++){
+                for(int i=0; i<=6; i++){
                     omp_set_num_threads(pow(2, i));
 
                     if(rank == 0){
