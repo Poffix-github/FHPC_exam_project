@@ -1,1 +1,2 @@
-size,"processor number","thread number",seconds
+size,steps,evolution,"processor number","thread number","total time","evolution time","average propagation time"
+4,1,1,4,2,183733,177309,30144
