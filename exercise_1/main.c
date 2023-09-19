@@ -203,7 +203,7 @@ int main( int argc, char **argv )
                             tend = MPI_Wtime();
                             update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
                         }
-                    }
+                // }
         }
         
         if(rank == 0) free(board);
