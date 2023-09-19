@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <mpi.h>
 #include <omp.h>
 
@@ -81,9 +80,9 @@ int main( int argc, char **argv )
             case -3: printf("I/O error in body\n"); break;
             default:
                 /*thread scaling*/
-                for(int i=0; i<=6; i++){
-                    omp_set_num_threads(pow(2, i));
-
+                int n_threads[7]={1,2,4,8,16,32,64}; 
+                for(int i=0; i<7; i++){
+                    omp_set_num_threads(n_threads[i]);
                     if(rank == 0){
                         /* swap endianism */
                         if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
