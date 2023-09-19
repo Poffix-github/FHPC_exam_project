@@ -187,32 +187,32 @@ int main( int argc, char **argv )
                             nthreads = omp_get_num_threads();
                             printf("+ %d threads in execution - -\n", nthreads );
                         }
-                    int me = omp_get_thread_num();
-    
-                    #pragma omp critical
-                    // we use critical only for having not-interleaved lines of output
-                    printf("thread %2d is running on core %2d\n", me, get_cpu_id() );
-
-
-                    if(rank == 0){
-                        /* swap endianism */
-                        if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
-                        printf("start evolution\n");
-                        tstart = MPI_Wtime();
-                    }
-                    
-                    if( e == ORDERED ){
-                        if(rank == 0) evolution_ordered(board, size, n, maxval, s);
-                    }else{ 
-                        evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
-                    }
+                        int me = omp_get_thread_num();
         
-                    MPI_Barrier(MPI_COMM_WORLD);
-                    if(rank == 0){
-                        tend = MPI_Wtime();
-                        update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
+                        #pragma omp critical
+                        // we use critical only for having not-interleaved lines of output
+                        printf("thread %2d is running on core %2d\n", me, get_cpu_id() );
+
+
+                        if(rank == 0){
+                            /* swap endianism */
+                            if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
+                            printf("start evolution\n");
+                            tstart = MPI_Wtime();
+                        }
+                        
+                        if( e == ORDERED ){
+                            if(rank == 0) evolution_ordered(board, size, n, maxval, s);
+                        }else{ 
+                            evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
+                        }
+            
+                        MPI_Barrier(MPI_COMM_WORLD);
+                        if(rank == 0){
+                            tend = MPI_Wtime();
+                            update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
+                        }
                     }
-                // }
         }
         
         if(rank == 0) free(board);
