@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <mpi.h>
 #include <omp.h>
 
@@ -79,27 +80,33 @@ int main( int argc, char **argv )
             case -2: printf("Memory not sufficient\n"); break;
             case -3: printf("I/O error in body\n"); break;
             default:
-                if(rank == 0){
-                    /* swap endianism */
-                    if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
-                    printf("start evolution\n");
-                    tstart = MPI_Wtime();
-                }
-                
-                if( e == ORDERED ){
-                    if(rank == 0) evolution_ordered(board, size, n, maxval, s);
-                }else{ 
-                    evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
+                /*thread scaling*/
+                for(int i=0; i<6; i++){
+                    omp_set_num_threads(pow(2, i));
+
+                    if(rank == 0){
+                        /* swap endianism */
+                        if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
+                        printf("start evolution\n");
+                        tstart = MPI_Wtime();
+                    }
+                    
+                    if( e == ORDERED ){
+                        if(rank == 0) evolution_ordered(board, size, n, maxval, s);
+                    }else{ 
+                        evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
+                    }
+        
+                    MPI_Barrier(MPI_COMM_WORLD);
+                    if(rank == 0){
+                        tend = MPI_Wtime();
+                        update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
+                    }
                 }
         }
         
         if(rank == 0) free(board);
 
-        MPI_Barrier(MPI_COMM_WORLD);
-        if(rank == 0){
-            tend = MPI_Wtime();
-            update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
-        }
     }
     
     if (rank == 0 && fname != NULL ) free ( fname );
