@@ -19,7 +19,7 @@
  * ==================================================
  */
 #define NUM_NEIGHBOURS 8
-#define NUM_BPR 2
+#define NUM_BPR 1
 
 /* Count the number of alive neighbours 
  */
