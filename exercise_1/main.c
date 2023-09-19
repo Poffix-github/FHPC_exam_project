@@ -28,6 +28,85 @@ int   n      = 10000;
 int   s      = 1;
 char *fname  = NULL;
 
+
+int get_cpu_id( void )
+{
+ #if defined(_GNU_SOURCE)                              // GNU SOURCE ------------
+  
+  return  sched_getcpu( );
+
+ #else
+
+ #ifdef SYS_getcpu                                     //     direct sys call ---
+  
+  int cpuid;
+  if ( syscall( SYS_getcpu, &cpuid, NULL, NULL ) == -1 )
+    return -1;
+  else
+    return cpuid;
+  
+ #else      
+
+  unsigned val;
+  if ( read_proc__self_stat( CPU_ID_ENTRY_IN_PROCSTAT, &val ) == -1 )
+    return -1;
+
+  return (int)val;
+
+ #endif                                                // -----------------------
+ #endif
+
+}
+
+
+
+int read_proc__self_stat( int field, int *ret_val )
+/*
+  Other interesting fields:
+
+  pid      : 0
+  father   : 1
+  utime    : 13
+  cutime   : 14
+  nthreads : 18
+  rss      : 22
+  cpuid    : 39
+
+  read man /proc page for fully detailed infos
+*/
+{
+  // not used, just mnemonic
+  // char *table[ 52 ] = { [0]="pid", [1]="father", [13]="utime", [14]="cutime", [18]="nthreads", [22]="rss", [38]="cpuid"};
+
+  *ret_val = 0;
+
+  FILE *file = fopen( "/proc/self/stat", "r" );
+  if (file == NULL )
+    return -1;
+
+  char   *line = NULL;
+  int     ret;
+  size_t  len;
+  ret = getline( &line, &len, file );
+  fclose(file);
+
+  if( ret == -1 )
+    return -1;
+
+  char *savetoken = line;
+  char *token = strtok_r( line, " ", &savetoken);
+  --field;
+  do { token = strtok_r( NULL, " ", &savetoken); field--; } while( field );
+
+  *ret_val = atoi(token);
+
+  free(line);
+
+  return 0;
+}
+
+
+
 void update_data(const int size, const int steps, const int evo, const int num_proc, const int num_threads, const int tot_time, const int evo_time, const int avg_propT);
 
 int main( int argc, char **argv )
