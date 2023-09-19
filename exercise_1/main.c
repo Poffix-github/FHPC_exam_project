@@ -6,6 +6,11 @@
 #include <omp.h>
 
 
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sched.h>
+
+
 
 #define INIT 1
 #define RUN  2
@@ -80,9 +85,35 @@ int main( int argc, char **argv )
             case -3: printf("I/O error in body\n"); break;
             default:
                 /*thread scaling*/
-                int n_threads[7]={1,2,4,8,16,32,64}; 
-                for(int i=0; i<7; i++){
-                    omp_set_num_threads(n_threads[i]);
+                // int n_threads[7]={1,2,4,8,16,32,64}; 
+
+                // for(int i=0; i<7; i++){
+                    // omp_set_num_threads(n_threads[i]);
+                    omp_set_num_threads(8);
+
+
+                    char *places = getenv("OMP_PLACES");
+                    char *bind   = getenv("OMP_PROC_BIND");
+                    if ( places != NULL )
+                        printf("OMP_PLACES is set to %s\n", places);
+                    if ( bind != NULL )
+                        printf("OMP_PROC_BINDING is set to %s\n", bind);
+  
+                    #pragma omp parallel
+                    {
+    
+                        #pragma omp single 
+                        {
+                            nthreads = omp_get_num_threads();
+                            printf("+ %d threads in execution - -\n", nthreads );
+                        }
+                    int me = omp_get_thread_num();
+    
+                    #pragma omp critical
+                    // we use critical only for having not-interleaved lines of output
+                    printf("thread %2d is running on core %2d\n", me, get_cpu_id() );
+
+
                     if(rank == 0){
                         /* swap endianism */
                         if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
@@ -101,7 +132,7 @@ int main( int argc, char **argv )
                         tend = MPI_Wtime();
                         update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
                     }
-                }
+                // }
         }
         
         if(rank == 0) free(board);
