@@ -29,81 +29,81 @@ int   s      = 1;
 char *fname  = NULL;
 
 
-int get_cpu_id( void )
-{
- #if defined(_GNU_SOURCE)                              // GNU SOURCE ------------
+// int get_cpu_id( void )
+// {
+//  #if defined(_GNU_SOURCE)                              // GNU SOURCE ------------
   
-  return  sched_getcpu( );
+//   return  sched_getcpu( );
 
- #else
+//  #else
 
- #ifdef SYS_getcpu                                     //     direct sys call ---
+//  #ifdef SYS_getcpu                                     //     direct sys call ---
   
-  int cpuid;
-  if ( syscall( SYS_getcpu, &cpuid, NULL, NULL ) == -1 )
-    return -1;
-  else
-    return cpuid;
+//   int cpuid;
+//   if ( syscall( SYS_getcpu, &cpuid, NULL, NULL ) == -1 )
+//     return -1;
+//   else
+//     return cpuid;
   
- #else      
+//  #else      
 
-  unsigned val;
-  if ( read_proc__self_stat( CPU_ID_ENTRY_IN_PROCSTAT, &val ) == -1 )
-    return -1;
+//   unsigned val;
+//   if ( read_proc__self_stat( CPU_ID_ENTRY_IN_PROCSTAT, &val ) == -1 )
+//     return -1;
 
-  return (int)val;
+//   return (int)val;
 
- #endif                                                // -----------------------
- #endif
+//  #endif                                                // -----------------------
+//  #endif
 
-}
+// }
 
 
 
-int read_proc__self_stat( int field, int *ret_val )
-/*
-  Other interesting fields:
+// int read_proc__self_stat( int field, int *ret_val )
+// /*
+//   Other interesting fields:
 
-  pid      : 0
-  father   : 1
-  utime    : 13
-  cutime   : 14
-  nthreads : 18
-  rss      : 22
-  cpuid    : 39
+//   pid      : 0
+//   father   : 1
+//   utime    : 13
+//   cutime   : 14
+//   nthreads : 18
+//   rss      : 22
+//   cpuid    : 39
 
-  read man /proc page for fully detailed infos
-*/
-{
-  // not used, just mnemonic
-  // char *table[ 52 ] = { [0]="pid", [1]="father", [13]="utime", [14]="cutime", [18]="nthreads", [22]="rss", [38]="cpuid"};
+//   read man /proc page for fully detailed infos
+// */
+// {
+//   // not used, just mnemonic
+//   // char *table[ 52 ] = { [0]="pid", [1]="father", [13]="utime", [14]="cutime", [18]="nthreads", [22]="rss", [38]="cpuid"};
 
-  *ret_val = 0;
+//   *ret_val = 0;
 
-  FILE *file = fopen( "/proc/self/stat", "r" );
-  if (file == NULL )
-    return -1;
+//   FILE *file = fopen( "/proc/self/stat", "r" );
+//   if (file == NULL )
+//     return -1;
 
-  char   *line = NULL;
-  int     ret;
-  size_t  len;
-  ret = getline( &line, &len, file );
-  fclose(file);
+//   char   *line = NULL;
+//   int     ret;
+//   size_t  len;
+//   ret = getline( &line, &len, file );
+//   fclose(file);
 
-  if( ret == -1 )
-    return -1;
+//   if( ret == -1 )
+//     return -1;
 
-  char *savetoken = line;
-  char *token = strtok_r( line, " ", &savetoken);
-  --field;
-  do { token = strtok_r( NULL, " ", &savetoken); field--; } while( field );
+//   char *savetoken = line;
+//   char *token = strtok_r( line, " ", &savetoken);
+//   --field;
+//   do { token = strtok_r( NULL, " ", &savetoken); field--; } while( field );
 
-  *ret_val = atoi(token);
+//   *ret_val = atoi(token);
 
-  free(line);
+//   free(line);
 
-  return 0;
-}
+//   return 0;
+// }
 
 
 
@@ -168,7 +168,7 @@ int main( int argc, char **argv )
 
                 // for(int i=0; i<7; i++){
                     // omp_set_num_threads(n_threads[i]);
-                    omp_set_num_threads(1);
+                    // omp_set_num_threads(1);
   
                     // #pragma omp parallel
                     // {
@@ -185,24 +185,24 @@ int main( int argc, char **argv )
                     //     printf("thread %2d is running on core %2d\n", me, get_cpu_id() );
 
 
-                        if(rank == 0){
-                            /* swap endianism */
-                            if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
-                            printf("start evolution\n");
-                            tstart = MPI_Wtime();
-                        }
+                if(rank == 0){
+                    /* swap endianism */
+                    if ( LITTLE_ENDIAN )swap_image( board, size, size, maxval);
+                    printf("start evolution\n");
+                    tstart = MPI_Wtime();
+                }
                         
-                        if( e == ORDERED ){
-                            if(rank == 0) evolution_ordered(board, size, n, maxval, s);
-                        }else{ 
-                            evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
-                        }
+                if( e == ORDERED ){
+                    if(rank == 0) evolution_ordered(board, size, n, maxval, s);
+                }else{ 
+                    evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
+                }
             
-                        MPI_Barrier(MPI_COMM_WORLD);
-                        if(rank == 0){
-                            tend = MPI_Wtime();
-                            update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
-                        }
+                MPI_Barrier(MPI_COMM_WORLD);
+                if(rank == 0){
+                    tend = MPI_Wtime();
+                    update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
+                }
                 // }
         }
         
