@@ -128,7 +128,6 @@ int main( int argc, char **argv )
 
     if(rank == 0){
         get_args(argc, argv, &action, &k, &e, &n, &s, &fname);
-        printf("num proc %d", num_proc);
     }
 
     MPI_Bcast(&action, 1, MPI_INT, 0, MPI_COMM_WORLD);
