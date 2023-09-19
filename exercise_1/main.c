@@ -168,30 +168,21 @@ int main( int argc, char **argv )
 
                 // for(int i=0; i<7; i++){
                     // omp_set_num_threads(n_threads[i]);
-                    omp_set_num_threads(8);
-
-
-                    int nthreads=0;
-                    char *places = getenv("OMP_PLACES");
-                    char *bind   = getenv("OMP_PROC_BIND");
-                    if ( places != NULL )
-                        printf("OMP_PLACES is set to %s\n", places);
-                    if ( bind != NULL )
-                        printf("OMP_PROC_BINDING is set to %s\n", bind);
+                    omp_set_num_threads(1);
   
-                    #pragma omp parallel
-                    {
+                    // #pragma omp parallel
+                    // {
     
-                        #pragma omp single 
-                        {
-                            nthreads = omp_get_num_threads();
-                            printf("+ %d threads in execution - -\n", nthreads );
-                        }
-                        int me = omp_get_thread_num();
+                    //     #pragma omp single 
+                    //     {
+                    //         nthreads = omp_get_num_threads();
+                    //         printf("+ %d threads in execution - -\n", nthreads );
+                    //     }
+                    //     int me = omp_get_thread_num();
         
-                        #pragma omp critical
-                        // we use critical only for having not-interleaved lines of output
-                        printf("thread %2d is running on core %2d\n", me, get_cpu_id() );
+                    //     #pragma omp critical
+                    //     // we use critical only for having not-interleaved lines of output
+                    //     printf("thread %2d is running on core %2d\n", me, get_cpu_id() );
 
 
                         if(rank == 0){
