@@ -92,6 +92,7 @@ int main( int argc, char **argv )
                     omp_set_num_threads(8);
 
 
+                    int nthreads=0;
                     char *places = getenv("OMP_PLACES");
                     char *bind   = getenv("OMP_PROC_BIND");
                     if ( places != NULL )
