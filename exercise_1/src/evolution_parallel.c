@@ -200,7 +200,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
      * */
     
     /* partition grid into blocks and scatter them through the processes*/
-    const int NDEC = DIM/sqrt(NUM_PROC); /* number of blocks in a coloumn and in a row in decomposition */
+    const int NDEC = NUM_BPR/* DIM/sqrt(NUM_PROC) */; /* number of blocks in a coloumn and in a row in decomposition */
     const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
 
     if(NUM_PROC != NDEC*NDEC){
