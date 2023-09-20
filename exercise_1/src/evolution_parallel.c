@@ -237,19 +237,19 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         }
     }
 
-    if(RANK == 0){
-        printf("displacement initialized\n");
-        for (int i=0; i<NPROWS*NPCOLS; i++) printf("%d ", disps[i]); /*0, 2, 8, 10*/
-        printf("\n");
+    // if(RANK == 0){
+    //     printf("displacement initialized\n");
+    //     for (int i=0; i<NPROWS*NPCOLS; i++) printf("%d ", disps[i]); /*0, 2, 8, 10*/
+    //     printf("\n");
 
-        printf("counts initialized\n");
-        for (int i=0; i<NPROWS*NPCOLS; i++) printf("%d ", counts[i]);
-        printf("\n");
-    }
+    //     printf("counts initialized\n");
+    //     for (int i=0; i<NPROWS*NPCOLS; i++) printf("%d ", counts[i]);
+    //     printf("\n");
+    // }
 
     MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    printf("scatter done\n");
+    // printf("scatter done\n");
 
     MPI_Status status;
     unsigned char btm_row[BLOCKCOLS];
@@ -424,8 +424,8 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             //         printf("\n");
             //     }
             // }
-            printf("evolution done\n");
         }
+        // printf("evolution done\n");
         
 
         if(s % SAVE == 0){
