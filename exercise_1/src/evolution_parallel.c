@@ -19,8 +19,8 @@
  * ==================================================
  */
 #define NUM_NEIGHBOURS 8
-#define NPROWS 2
-#define NPCOLS 2
+#define NPROWS 1
+#define NPCOLS 1
 
 /* Count the number of alive neighbours 
  */
@@ -249,6 +249,8 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
+    printf("scatter done\n");
+
     MPI_Status status;
     unsigned char btm_row[BLOCKCOLS];
     unsigned char top_row[BLOCKCOLS];
@@ -355,6 +357,8 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
         }
 
+        printf("propagation done\n");
+
         // for(int p=0; p<NUM_PROC; p++){
             // if(RANK == 0){
             //     printf("RANK %d\n", RANK);
@@ -420,6 +424,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             //         printf("\n");
             //     }
             // }
+            printf("evolution done\n");
         }
         
 
