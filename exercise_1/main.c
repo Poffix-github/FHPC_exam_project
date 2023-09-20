@@ -164,10 +164,10 @@ int main( int argc, char **argv )
             case -3: printf("I/O error in body\n"); break;
             default:
                 /*thread scaling*/
-                // int n_threads[7]={1,2,4,8,16,32,64}; 
+                int n_threads[7]={1,2,4,8,16,32,64}; 
 
-                // for(int i=0; i<7; i++){
-                    // omp_set_num_threads(n_threads[i]);
+                for(int i=0; i<7; i++){
+                    omp_set_num_threads(n_threads[i]);
                     // omp_set_num_threads(1);
   
                     // #pragma omp parallel
@@ -203,7 +203,7 @@ int main( int argc, char **argv )
                     tend = MPI_Wtime();
                     update_data(size, n, e, num_proc, omp_get_max_threads(), get_time(tstart, tend), evo_time, avg_propT);
                 }
-                // }
+                }
         }
         
         if(rank == 0) free(board);

@@ -19,11 +19,12 @@
  * ==================================================
  */
 #define NUM_NEIGHBOURS 8
-#define NUM_BPR 2
+#define NPROWS 1
+#define NPCOLS 1
 
 /* Count the number of alive neighbours 
  */
-char check_neighbours(const void* board, const int DIM, const int i, const int j, 
+char check_neighbours(const void* board, const int BLROWS, const int BLCOLS, const int i, const int j, 
                       const unsigned char t_l, const unsigned char* top, const unsigned char t_r, const unsigned char* left, 
                       const unsigned char* right, const unsigned char b_l, const unsigned char* bottom, const unsigned char b_r, const int RANK){
     const int off_sets[NUM_NEIGHBOURS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
@@ -32,9 +33,9 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
     unsigned int count=0;    /* number of alive cells around the ij-th */
 
     /* inner cell */
-    if(i != 0 && j != 0 && i != DIM-1 && j != DIM-1){
+    if(i != 0 && j != 0 && i != BLROWS-1 && j != BLCOLS-1){
         for(int z=0; z<NUM_NEIGHBOURS; z++){
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         }
     }else if(i == 0){     /* outer cell */
         if(j == 0){
@@ -42,48 +43,48 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
             if(top[0] >= 128) count++;
             if(top[1] >= 128) count++;
             if(left[0] >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[4][0])*DIM + (j + off_sets[4][1])] >= 128) count++;
+            if(((unsigned char*)board)[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
             if(left[1] >= 128) count++;
             for(int z=6; z<NUM_NEIGHBOURS; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
-        }else if(j == DIM-1){
-            if(top[DIM-2] >= 128) count++;
-            if(top[DIM-1] >= 128) count++;
+                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+        }else if(j == BLCOLS-1){
+            if(top[BLCOLS-2] >= 128) count++;
+            if(top[BLCOLS-1] >= 128) count++;
             if(t_r >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[3][0])*DIM + (j + off_sets[3][1])] >= 128) count++;
+            if(((unsigned char*)board)[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
             if(right[0] >= 128) count++;
             for(int z=5; z<NUM_NEIGHBOURS-1; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
             if(right[1] >= 128) count++;
         }else{
             if(top[j-1] >= 128) count++;
             if(top[j] >= 128) count++;
             if(top[j+1] >= 128) count++;
             for(int z=3; z<NUM_NEIGHBOURS; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         }
-    }else if(i == DIM-1){
+    }else if(i == BLROWS-1){
         if(j == 0){
-            if(left[DIM-2] >= 128) count++;
+            if(left[BLROWS-2] >= 128) count++;
             for(int z=1; z<3; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
-            if(left[DIM-1] >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[4][0])*DIM + (j + off_sets[4][1])] >= 128) count++;
+                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+            if(left[BLROWS-1] >= 128) count++;
+            if(((unsigned char*)board)[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
             if(b_l >= 128) count++;
             if(bottom[0] >= 128) count++;
             if(bottom[1] >= 128) count++;
-        }else if(j == DIM-1){
+        }else if(j == BLCOLS-1){
             for(int z=0; z<2; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
-            if(right[DIM-2] >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[3][0])*DIM + (j + off_sets[3][1])] >= 128) count++;
-            if(right[DIM-1] >= 128) count++;
-            if(bottom[DIM-2] >= 128) count++;
-            if(bottom[DIM-1] >= 128) count++;
+                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+            if(right[BLROWS-2] >= 128) count++;
+            if(((unsigned char*)board)[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
+            if(right[BLROWS-1] >= 128) count++;
+            if(bottom[BLCOLS-2] >= 128) count++;
+            if(bottom[BLCOLS-1] >= 128) count++;
             if(b_r >= 128) count++;
         }else{
             for(int z=0; z<5; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
             if(bottom[j-1] >= 128) count++;
             if(bottom[j] >= 128) count++;
             if(bottom[j+1] >= 128) count++;
@@ -91,20 +92,20 @@ char check_neighbours(const void* board, const int DIM, const int i, const int j
     }else if(j == 0){
         if(left[i-1] >= 128) count++;
         for(int z=1; z<3; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
     	if(left[i] >= 128) count++;
-        if(((unsigned char*)board)[(i + off_sets[4][0])*DIM + (j + off_sets[4][1])] >= 128) count++;
+        if(((unsigned char*)board)[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
         if(left[i+1] >= 128) count++;
         for(int z=6; z<NUM_NEIGHBOURS; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
     }else{
         for(int z=0; z<2; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         if(right[i-1] >= 128) count++;
-        if(((unsigned char*)board)[(i + off_sets[3][0])*DIM + (j + off_sets[3][1])] >= 128) count++;
+        if(((unsigned char*)board)[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
         if(right[i] >= 128) count++;
         for(int z=5; z<7; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*DIM + (j + off_sets[z][1])] >= 128 ) count++;
+            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         if(right[i+1] >= 128) count++;
     }   
 
@@ -158,36 +159,36 @@ void evolution_ordered(void* board, const int DIM, const int STEPS, const int MA
     }
 }
 
-int top_block(const int RANK, const int NDEC){
-    return RANK < NDEC ? (NDEC-1)*NDEC + RANK : RANK - NDEC;
+int top_block(const int RANK){
+    return RANK < NPCOLS ? (NPROWS-1)*NPCOLS + RANK : RANK - NPCOLS;
 }
 
-int bottom_block(const int RANK, const int NDEC){
-    return RANK >= NDEC*(NDEC-1) ? RANK % NDEC : RANK + NDEC;
+int bottom_block(const int RANK){
+    return RANK >= NPCOLS*(NPROWS-1) ? RANK % NPCOLS : RANK + NPCOLS;
 }
 
-int right_block(const int RANK, const int NDEC){
-    return RANK%NDEC == NDEC-1 ? RANK - NDEC + 1 : RANK + 1;
+int right_block(const int RANK){
+    return RANK%NPCOLS == NPCOLS-1 ? RANK - NPCOLS + 1 : RANK + 1;
 }
 
 int left_block(const int RANK, const int NDEC){
-    return RANK%NDEC == 0 ? RANK + NDEC - 1 : RANK - 1;
+    return RANK%NPCOLS == 0 ? RANK + NPCOLS - 1 : RANK - 1;
 }
 
-int top_left_blk(const int RANK, const int NDEC){
-    return RANK%NDEC == 0 ? top_block(RANK, NDEC) + NDEC-1 : top_block(RANK, NDEC) - 1;
+int top_left_blk(const int RANK){
+    return RANK%NPCOLS == 0 ? top_block(RANK) + NPCOLS-1 : top_block(RANK) - 1;
 }
 
-int top_right_blk(const int RANK, const int NDEC){
-    return RANK%NDEC == NDEC-1 ? top_block(RANK, NDEC) - NDEC+1 : top_block(RANK, NDEC) + 1;
+int top_right_blk(const int RANK){
+    return RANK%NPCOLS == NPCOLS-1 ? top_block(RANK) - NPCOLS+1 : top_block(RANK) + 1;
 }
 
 int btm_left_blk(const int RANK, const int NDEC){
-    return RANK%NDEC == 0 ? bottom_block(RANK, NDEC) + NDEC-1 : bottom_block(RANK, NDEC) - 1;
+    return RANK%NPCOLS == 0 ? bottom_block(RANK) + NPCOLS-1 : bottom_block(RANK) - 1;
 }
 
 int btm_right_blk(const int RANK, const int NDEC){
-    return RANK%NDEC == NDEC-1 ? bottom_block(RANK, NDEC) - NDEC+1 : bottom_block(RANK, NDEC) + 1;
+    return RANK%NPCOLS == NPCOLS-1 ? bottom_block(RANK) - NPCOLS+1 : bottom_block(RANK) + 1;
 }
 
 /* Evolves the whole board once. 
@@ -200,18 +201,18 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
      * */
     
     /* partition grid into blocks and scatter them through the processes*/
-    const int NDEC = NUM_BPR/* DIM/sqrt(NUM_PROC) */; /* number of blocks in a coloumn and in a row in decomposition */
-    const int BLOCKSIZE = DIM/NDEC; /* number of rows and columns in a block */
+    const int BLOCKROWS = DIM/NPROWS; /* number of rows and columns in a block */
+    const int BLOCKCOLS = DIM/NPCOLS; /* number of rows and columns in a block */
 
-    if(NUM_PROC != NDEC*NDEC){
+    if(NUM_PROC != NPROWS*NPCOLS){
         fprintf(stderr,"Error: number of PEs %d != %d x %d\n", NUM_PROC, NDEC, NDEC);
         MPI_Finalize();
         exit(-1);
     }
 
-    unsigned char block[BLOCKSIZE*BLOCKSIZE];
+    unsigned char block[BLOCKROWS*BLOCKCOLS];
     #pragma omp parallel for schedule(static) shared(BLOCKSIZE)
-    for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) block[ii] = 0;
+    for (int ii=0; ii<BLOCKROWS*BLOCKCOLS; ii++) block[ii] = 0;
 
     // if(RANK == 0){
     //     printf("block inizializzato\n");
@@ -222,17 +223,17 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     MPI_Datatype blocktype;
     MPI_Datatype blocktype2;
 
-    MPI_Type_vector(BLOCKSIZE, BLOCKSIZE, DIM, MPI_UNSIGNED_CHAR, &blocktype2);
+    MPI_Type_vector(BLOCKROWS, BLOCKCOLS, DIM, MPI_UNSIGNED_CHAR, &blocktype2);
     MPI_Type_create_resized( blocktype2, 0, sizeof(char), &blocktype);
     MPI_Type_commit(&blocktype);
 
-    int disps[NDEC*NDEC];
-    int counts[NDEC*NDEC];
+    int disps[NPROWS*NPCOLS];
+    int counts[NPROWS*NPCOLS];
     #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDEC, disps, counts)
-    for (int ii=0; ii<NDEC; ii++) {
-        for (int jj=0; jj<NDEC; jj++) {
-            disps[ii*NDEC+jj] = ii*DIM*BLOCKSIZE+jj*BLOCKSIZE;
-            counts [ii*NDEC+jj] = 1;
+    for (int ii=0; ii<NPROWS; ii++) {
+        for (int jj=0; jj<NPCOLS; jj++) {
+            disps[ii*NPCOLS+jj] = ii*DIM*BLOCKROWS+jj*BLOCKCOLS;
+            counts [ii*NPCOLS+jj] = 1;
         }
     }
 
@@ -246,26 +247,26 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     //     printf("\n");
     // }
 
-    MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
     MPI_Status status;
-    unsigned char btm_row[BLOCKSIZE];
-    unsigned char top_row[BLOCKSIZE];
-    unsigned char left_clmn[BLOCKSIZE];
-    unsigned char right_clmn[BLOCKSIZE];
-    unsigned char temp[BLOCKSIZE];
+    unsigned char btm_row[BLOCKCOLS];
+    unsigned char top_row[BLOCKCOLS];
+    unsigned char left_clmn[BLOCKROWS];
+    unsigned char right_clmn[BLOCKROWS];
+    unsigned char temp[BLOCKROWS];
     unsigned char top_left, top_right, btm_left, btm_right;
 
     #pragma omp parallel
     {
         #pragma omp parallel for schedule(static) shared(BLOCKSIZE, btm_row)
-        for (int ii=0; ii<BLOCKSIZE; ii++) btm_row[ii] = 0;
+        for (int ii=0; ii<BLOCKCOLS; ii++) btm_row[ii] = 0;
         #pragma omp parallel for schedule(static) shared(BLOCKSIZE, top_row)
-        for (int ii=0; ii<BLOCKSIZE; ii++) top_row[ii] = 0;
+        for (int ii=0; ii<BLOCKCOLS; ii++) top_row[ii] = 0;
         #pragma omp parallel for schedule(static) shared(BLOCKSIZE, left_clmn)
-        for (int ii=0; ii<BLOCKSIZE; ii++) left_clmn[ii] = 0;
+        for (int ii=0; ii<BLOCKROWS; ii++) left_clmn[ii] = 0;
         #pragma omp parallel for schedule(static) shared(BLOCKSIZE, right_clmn)
-        for (int ii=0; ii<BLOCKSIZE; ii++) right_clmn[ii] = 0;
+        for (int ii=0; ii<BLOCKROWS; ii++) right_clmn[ii] = 0;
     }
 
     // if(RANK == 0){
@@ -296,62 +297,62 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         if(RANK == 0) tpstart = MPI_Wtime();
 
         /* propagate rows */
-        if((RANK/NDEC)%2 == 0){
+        if((RANK/NPCOLS)%2 == 0){
             
             /* send top row */
-            MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD);
+            MPI_Recv(btm_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD, &status);
             /* send bottom row */
-            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(top_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(top_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(btm_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(btm_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(top_row, BLOCKSIZE, MPI_UNSIGNED_CHAR, top_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block + (BLOCKSIZE*(BLOCKSIZE-1)), BLOCKSIZE, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(top_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD);
         }
         /* propagate coloumns */
-        if((RANK%NDEC)%2 == 0){
+        if((RANK%NPCOLS)%2 == 0){
             /* send right coloumn */
-            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
-            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, right_block(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(left_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
+            for(int i=1; i<=BLOCKROWS; i++) temp[i-1] = block[i*BLOCKROWS - 1];
+            MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, right_block(RANK), 0, MPI_COMM_WORLD);
+            MPI_Recv(left_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
             /* send left coloumn */
-            for(int i=0; i<BLOCKSIZE; i++) temp[i] = block[i*BLOCKSIZE];
-            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Recv(right_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
+            for(int i=0; i<BLOCKROWS; i++) temp[i] = block[i*BLOCKROWS];
+            MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD);
+            MPI_Recv(right_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(left_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            for(int i=1; i<=BLOCKSIZE; i++) temp[i-1] = block[i*BLOCKSIZE - 1];
-            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, right_block(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(left_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
+            for(int i=1; i<=BLOCKROWS; i++) temp[i-1] = block[i*BLOCKROWS - 1];
+            MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, right_block(RANK), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(right_clmn, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            for(int i=0; i<BLOCKSIZE; i++) temp[i] = block[i*BLOCKSIZE];
-            MPI_Send(temp, BLOCKSIZE, MPI_UNSIGNED_CHAR, left_block(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Recv(right_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
+            for(int i=0; i<BLOCKROWS; i++) temp[i] = block[i*BLOCKROWS];
+            MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD);
         }
 
         /* propagate corners in diagonal */
-        if( (RANK/NDEC)%2 == 0 ){   /* blocks in even rows send first */
-            MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
+        if( (RANK/NPCOLS)%2 == 0 ){   /* blocks in even rows send first */
+            MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NPCOLS-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NPCOLS*(NPROWS-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
 
-            MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*(NDEC-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
-            MPI_Send(block + NDEC*NDEC - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NPCOLS-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NPCOLS*(NPROWS-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD);
+            MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
         }
 
         // for(int p=0; p<NUM_PROC; p++){
@@ -383,12 +384,12 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             // }
 
             #pragma omp for schedule(static) collapse(2)
-            for(int i=0; i<BLOCKSIZE; i++){
-                for(int j=0; j<BLOCKSIZE; j++){
-                    if(check_neighbours(block, BLOCKSIZE, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1){ /* cell will be or remain alive */
-                        if(*(((unsigned char*)block) + i*BLOCKSIZE + j) <= 127) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 127;
+            for(int i=0; i<BLOCKROWS; i++){
+                for(int j=0; j<BLOCKCOLS; j++){
+                    if(check_neighbours(block, BLOCKROWS, BLOCKCOLS, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1){ /* cell will be or remain alive */
+                        if(*(((unsigned char*)block) + i*BLOCKCOLS + j) <= 127) *(((unsigned char*)block) + i*BLOCKCOLS + j) = 127;
                     }else{
-                        if(*(((unsigned char*)block) + i*BLOCKSIZE + j) >= 128) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 128;
+                        if(*(((unsigned char*)block) + i*BLOCKCOLS + j) >= 128) *(((unsigned char*)block) + i*BLOCKCOLS + j) = 128;
                     }
 
                 }
@@ -404,10 +405,10 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             // }
             
             #pragma omp for schedule(static) collapse(2)
-            for(int i=0; i<BLOCKSIZE; i++){
-                for(int j=0; j<BLOCKSIZE; j++){
-                    if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 127) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 255;
-                    else if(*(((unsigned char*)block) + i*BLOCKSIZE + j) == 128) *(((unsigned char*)block) + i*BLOCKSIZE + j) = 0;
+            for(int i=0; i<BLOCKROWS; i++){
+                for(int j=0; j<BLOCKCOLS; j++){
+                    if(*(((unsigned char*)block) + i*BLOCKCOLS + j) == 127) *(((unsigned char*)block) + i*BLOCKCOLS + j) = 255;
+                    else if(*(((unsigned char*)block) + i*BLOCKCOLS + j) == 128) *(((unsigned char*)block) + i*BLOCKCOLS + j) = 0;
                 }
             }
 
@@ -423,11 +424,11 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         
 
         if(s % SAVE == 0){
-            MPI_Gatherv(block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD); 
+            MPI_Gatherv(block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD); 
             
             if(RANK == 0) save_snap(board, DIM, MAXVAL, s);
 
-            MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKSIZE*BLOCKSIZE, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+            MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
         }
     }
     if(RANK == 0){
