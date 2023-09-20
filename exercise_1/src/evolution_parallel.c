@@ -357,7 +357,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
         }
 
-        printf("propagation done\n");
+        // printf("propagation done\n");
 
         // for(int p=0; p<NUM_PROC; p++){
             // if(RANK == 0){
