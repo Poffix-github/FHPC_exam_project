@@ -171,7 +171,7 @@ int right_block(const int RANK){
     return RANK%NPCOLS == NPCOLS-1 ? RANK - NPCOLS + 1 : RANK + 1;
 }
 
-int left_block(const int RANK, const int NDEC){
+int left_block(const int RANK){
     return RANK%NPCOLS == 0 ? RANK + NPCOLS - 1 : RANK - 1;
 }
 
@@ -183,11 +183,11 @@ int top_right_blk(const int RANK){
     return RANK%NPCOLS == NPCOLS-1 ? top_block(RANK) - NPCOLS+1 : top_block(RANK) + 1;
 }
 
-int btm_left_blk(const int RANK, const int NDEC){
+int btm_left_blk(const int RANK){
     return RANK%NPCOLS == 0 ? bottom_block(RANK) + NPCOLS-1 : bottom_block(RANK) - 1;
 }
 
-int btm_right_blk(const int RANK, const int NDEC){
+int btm_right_blk(const int RANK){
     return RANK%NPCOLS == NPCOLS-1 ? bottom_block(RANK) - NPCOLS+1 : bottom_block(RANK) + 1;
 }
 
@@ -205,13 +205,13 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     const int BLOCKCOLS = DIM/NPCOLS; /* number of rows and columns in a block */
 
     if(NUM_PROC != NPROWS*NPCOLS){
-        fprintf(stderr,"Error: number of PEs %d != %d x %d\n", NUM_PROC, NDEC, NDEC);
+        fprintf(stderr,"Error: number of PEs %d != %d x %d\n", NUM_PROC, NPROWS, NPCOLS);
         MPI_Finalize();
         exit(-1);
     }
 
     unsigned char block[BLOCKROWS*BLOCKCOLS];
-    #pragma omp parallel for schedule(static) shared(BLOCKSIZE)
+    #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS)
     for (int ii=0; ii<BLOCKROWS*BLOCKCOLS; ii++) block[ii] = 0;
 
     // if(RANK == 0){
@@ -229,7 +229,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     int disps[NPROWS*NPCOLS];
     int counts[NPROWS*NPCOLS];
-    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKSIZE, NDEC, disps, counts)
+    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKROWS, BLOCKCOLS, NDEC, disps, counts)
     for (int ii=0; ii<NPROWS; ii++) {
         for (int jj=0; jj<NPCOLS; jj++) {
             disps[ii*NPCOLS+jj] = ii*DIM*BLOCKROWS+jj*BLOCKCOLS;
@@ -259,13 +259,13 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     #pragma omp parallel
     {
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, btm_row)
+        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, btm_row)
         for (int ii=0; ii<BLOCKCOLS; ii++) btm_row[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, top_row)
+        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, top_row)
         for (int ii=0; ii<BLOCKCOLS; ii++) top_row[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, left_clmn)
+        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, left_clmn)
         for (int ii=0; ii<BLOCKROWS; ii++) left_clmn[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKSIZE, right_clmn)
+        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, right_clmn)
         for (int ii=0; ii<BLOCKROWS; ii++) right_clmn[ii] = 0;
     }
 
@@ -303,14 +303,14 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             MPI_Send(block, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD, &status);
             /* send bottom row */
-            MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD);
             MPI_Recv(top_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD, &status);
         }else{
             MPI_Recv(btm_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD, &status);
             MPI_Send(block, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD);
 
             MPI_Recv(top_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD, &status);
-            MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK, NDEC), 0, MPI_COMM_WORLD);
+            MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD);
         }
         /* propagate coloumns */
         if((RANK%NPCOLS)%2 == 0){
@@ -371,7 +371,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             tprop += get_time(tpstart, tpend);
         }
 
-        #pragma omp parallel shared(BLOCKSIZE, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
+        #pragma omp parallel shared(BLOCKROWS, BLOCKCOLS, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
         {
             // if(RANK == 0) printf("ciao sono il thread %d\n", omp_get_thread_num());
             // if(RANK == 0){
