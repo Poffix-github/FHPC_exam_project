@@ -229,7 +229,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     int disps[NPROWS*NPCOLS];
     int counts[NPROWS*NPCOLS];
-    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKROWS, BLOCKCOLS, NPCOLS, NPROWS, disps, counts)
+    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKROWS, BLOCKCOLS, disps, counts)
     for (int ii=0; ii<NPROWS; ii++) {
         for (int jj=0; jj<NPCOLS; jj++) {
             disps[ii*NPCOLS+jj] = ii*DIM*BLOCKROWS+jj*BLOCKCOLS;
