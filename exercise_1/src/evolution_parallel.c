@@ -19,7 +19,7 @@
  * ==================================================
  */
 #define NUM_NEIGHBOURS 8
-#define NPROWS 2
+#define NPROWS 3
 #define NPCOLS 2
 
 /* Count the number of alive neighbours 
