@@ -168,7 +168,7 @@ int main( int argc, char **argv )
 
                 // for(int i=0; i<7; i++){
                 //     omp_set_num_threads(n_threads[i]);
-                    omp_set_num_threads(64);
+                    omp_set_num_threads(12);
   
                     // #pragma omp parallel
                     // {
