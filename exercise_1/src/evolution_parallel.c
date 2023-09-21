@@ -19,8 +19,8 @@
  * ==================================================
  */
 #define NUM_NEIGHBOURS 8
-#define NPROWS 1
-#define NPCOLS 1
+#define NPROWS 2
+#define NPCOLS 2
 
 /* Count the number of alive neighbours */
 char check_neighbours(const void* board, const int BLROWS, const int BLCOLS, const int i, const int j, 
