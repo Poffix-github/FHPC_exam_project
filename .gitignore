@@ -1,5 +1,5 @@
 compilation_notes.txt
-.vscode/settings.json
+.vscode
 exercise_1/report.md
 exercise_1/obj/*
 exercise_1/snapshots/*
