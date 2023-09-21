@@ -20,6 +20,7 @@
     2.3 [Static Evolution](#23-static-evolution)  
     2.4 [Board generation](#24-board-generation)  
     2.5 [check_neighbours](#25-check_neighbours)   
+    2.6 [Multiprocessing](#26-multiprocessing)
 3. [Results & Discussion](#3-results--discussion)  
 4. [Conclusions](#4-conclusions)
 
@@ -62,8 +63,10 @@ I focused on the heaviest part for multithreading and I left singlethreaded othe
 
 ### 1.4 Multiprocessing
 - handling of the board (splitting, reconeccting to save etc.)
+
+
 - all single-process operations handled by root process. This enables single-process execution of the code.
-- not bundling together the sends and receives of the propagation for clarity
+
 
 ### 1.5 Board generation
 `random_board()`, talk probability
@@ -75,28 +78,54 @@ not implemented by me so no notes on approach or implementation, I just learned 
 ### 1.7 Time tracking
 multiple times for each run, what they mean, why.
 
+### 1.8 Experimentation Environment
+- only EPYC, no THIN
+- only OpenMPI, no IntelMPI
 
 
 ## 2. Implementation
 ### 2.1 Code management
-How is the code managed, what is in which files, why is it. 
+- How is the code managed, what is in which files, why is it. 
 
 ### 2.2 Cells states
-The matrix that stores grid, and also all auxiliary variables and arrays that store cells, are of type `unsigned char`. Firstable `char` is the type that occupies the least memory in C at 1 Byte, which is plenty to store the numbers from 0 to 255 that the grid uses. Secondable since, as just noted, the numbers to be stored are all positive using `usigned` provides an hardcoded guard against negative values; this way the code better resembles the logic behind it.  
+- The matrix that stores grid, and also all auxiliary variables and arrays that store cells, are of type `unsigned char`. Firstable `char` is the type that occupies the least memory in C at 1 Byte, which is plenty to store the numbers from 0 to 255 that the grid uses. Secondable since, as just noted, the numbers to be stored are all positive using `usigned` provides an hardcoded guard against negative values; this way the code better resembles the logic behind it.  
 
 
 ### 2.3 Static Evolution
-128,127: values to mark cells that will change
+- 128,127: values to mark cells that will change
 
 ### 2.4 Board generation
-`random_board()`, multithreading problem with `rand()` and the seed. 
-https://pvs-studio.com/en/blog/posts/0012/ 
+- `random_board()`, multithreading problem with `rand()` and the seed. https://pvs-studio.com/en/blog/posts/0012/ 
 
 ### 2.5 `check_neighbours`
-`check_neighbours()`
+- `check_neighbours()`
 
+### 2.6 Multiprocessing
+- not bundling together the sends and receives of the propagation for clarity
 
 ## 3. Results & Discussion
+for all tests:
+- commands of allocated resources
+- commands for running experiment
+- data plots
+- explanation
 
+### OpenMP scalability
+
+        salloc -N1 -p EPYC -n128 --time=1:0:0
+        export OMP_PLACES=cores
+        srun -n1 --cpus-per-task=64 mpirun --map-by socket gol.x -r -f start_1000px.pgm -n 1000 -e 1 -s 1000
+size,steps,evolution,"processor number","thread number","total time","evolution time","average propagation time"
+1000,1000,1,1,1,72635616,72632154,7
+1000,1000,1,1,2,36536630,36534854,7
+1000,1000,1,1,4,18318647,18317337,7
+1000,1000,1,1,8,9218737,9217823,15
+1000,1000,1,1,16,4652385,4651514,19
+1000,1000,1,1,32,2367646,2366288,21
+1000,1000,1,1,64,1302963,1300866,24
+
+### Strong MPI scalability
+
+### Weak MPI scalability
 
 ## 4. Conclusions 
