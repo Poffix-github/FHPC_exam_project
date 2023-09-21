@@ -19,11 +19,10 @@
  * ==================================================
  */
 #define NUM_NEIGHBOURS 8
-#define NPROWS 3
-#define NPCOLS 2
+#define NPROWS 2
+#define NPCOLS 1
 
-/* Count the number of alive neighbours 
- */
+/* Count the number of alive neighbours */
 char check_neighbours(const void* board, const int BLROWS, const int BLCOLS, const int i, const int j, 
                       const unsigned char t_l, const unsigned char* top, const unsigned char t_r, const unsigned char* left, 
                       const unsigned char* right, const unsigned char b_l, const unsigned char* bottom, const unsigned char b_r, const int RANK){
@@ -143,7 +142,7 @@ char check_neighbours_ord(const void* board, const int dim, const int i, const i
  */
 void evolution_ordered(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE){
     for(int s=0; s<STEPS; s++){
-        #pragma omp parallel for schedule(static) collapse(2) shared(DIM, board)
+        // TODO: MPI
         for(int i=0; i<DIM; i++){
             for(int j=0; j<DIM; j++){
                 if(check_neighbours_ord(board, DIM, i, j) == 1){
