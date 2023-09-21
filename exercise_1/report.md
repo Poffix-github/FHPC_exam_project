@@ -55,7 +55,7 @@ I saw two possible solutions to this problem, each with their own positives and 
 From initial experiments I carried out I formed some expectations on the behaviour of this game. Unfortunately I didn't save the precise numbers but my takeaway is that a significant number of cells change state each evolution step if we start from a random initial state [[2.4](#24-board-generation)]. Transalted to the two solutions above, this means that the lists will occupy a significant amount of memory each step, and if I update the memory allocated for each list doubling it when it is full I could have to allocate up to four times the size of the grid at each evolution step. Moreover middle-states are much easier to handle than dynamic memory. All this is why I opted for the middle-states soution instead of using separate lists. Further implementation details can be found in the next section [[2.3](#23-static-evolution)].
 
 ### 1.2 Ordered Evolution
-No OpenMP, it is useless.
+The ordered evolution is simple in its implementation and does everything in a couple of nested loops; but this same simplicity is also reason reason of impairment for parallelization, and consequently scalability performance. Not all parallelization is impossible, multiprocessing works and is as effective as for the static evolution, only multithreading cannot bring any benefit and the reason is in the ordered nature of the approach and the way OpenMP parallelizes the work; let's analyze both in order. The ordered evolution is intrisically serial
 
 ### 1.3 Multithreading
 I focused on the heaviest part for multithreading and I left singlethreaded other parts that could have been multi threaded to have a cleaner code. Results back me up in this decision. 
