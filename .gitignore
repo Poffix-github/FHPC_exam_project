@@ -1,1 +1,13 @@
 compilation_notes.txt
+.vscode/settings.json
+exercise1/report.md
+exercise1/obj/*
+exercise1/snapshots/*
+exercise1/src/a.out
+exercise1/src/partition_mpi.x
+exercise1/starts/start_2*px.pgm
+exercise1/starts/start_3000px.pgm
+exercise1/starts/start_4000px.pgm
+exercise1/starts/start_5000px.pgm
+exercise1/starts/start_5760px.pgm
+exercise1/starts/start_10000px.pgm

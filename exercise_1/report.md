@@ -14,15 +14,21 @@
     1.5 [Board generation](#15-board-generation)  
     1.6 [Read and write image](#16-read-and-write-image)  
     1.7 [Time tracking](#17-time-tracking)  
+    1.8 [Experimentation Environment](#18-experimentation-environment)  
 2. [Implementation](#2-implementation)  
-    2.1 [Code management](#21-code-management)  
+    2.1 [Repository structure](#21-repository-structure)  
     2.2 [Cells states](#22-representation-of-cells)  
     2.3 [Static Evolution](#23-static-evolution)  
     2.4 [Board generation](#24-board-generation)  
     2.5 [check_neighbours](#25-check_neighbours)   
-    2.6 [Multiprocessing](#26-multiprocessing)
+    2.6 [Multiprocessing](#26-multiprocessing)  
 3. [Results & Discussion](#3-results--discussion)  
-4. [Conclusions](#4-conclusions)
+    3.1 [OpenMP scalability](#31-openmp-scalability)  
+    3.2 [Strong MPI scalability](#32-strong-mpi-scalability)  
+    3.3 [Weak MPI scalability](#33-weak-mpi-scalability)  
+4. [Conclusions](#4-conclusions)  
+    4.1 [Simpler splitting of the grid](#41-simpler-splitting-of-the-grid)
+
 
 ## 0. Introduction
 The project consists of a scaling study on a personal and highly parallel implementation of the so called Conway's Game of Life.
@@ -53,38 +59,76 @@ I saw two possible solutions to this problem, each with their own positives and 
 - **Middle-states.** With middle-states I mean adding states that a cell can be in other than "alive" and "dead". In particular I add the states "will die" to mark a cell that is alive but will have to die at the next evolution step, and "will live" to mark a cell that is dead but will live at the next evolution step. This approach consists of marking the cells directly on the grid, without any additional data structure, but in a way that still leaves visible the current state of the grid so that checking the following cells will not be influenced by the mark. The drawback of this approach presents itself at the moment of updating the grid for the next state, here I have to change all cells in a middle-state to the state they are meant to have. There are no shortcuts to accomplish this, an additional full scan of the grid is necessary to find the middle-states and write the corresponding final state.
 - **Separate Lists.** Two separate dynamic lists store coordinates, one of the cells to revive and the other of the cells to kill. This approach uses additional memory but minimizes the effort to update the grid afterwards, since I only have to loop through the lists and access only the cells that need modifying and no other.  
 
-From initial experiments I carried out I formed some expectations on the behaviour of this game. Unfortunately I didn't save the precise numbers but my takeaway is that a significant number of cells change state each evolution step if we start from a random initial state [[2.4](#24-board-generation)]. Transalted to the two solutions above, this means that the lists will occupy a significant amount of memory each step, and if I update the memory allocated for each list doubling it when it is full I could have to allocate up to four times the size of the grid at each evolution step. Moreover middle-states are much easier to handle than dynamic memory. All this is why I opted for the middle-states soution instead of using separate lists. Further implementation details can be found in the next section [[2.3](#23-static-evolution)].
+From initial experiments I carried out I formed some expectations on the behaviour of this game. Unfortunately I did not save the precise numbers but my takeaway is that a significant number of cells change state each evolution step if we start from a random initial state [[2.4](#24-board-generation)]. Transalted to the two solutions above, this means that the lists will occupy a significant amount of memory each step, and if I update the memory allocated for each list doubling it when it is full I could have to allocate up to four times the size of the grid at each evolution step. Moreover middle-states are much easier to handle than dynamic memory. All this is why I opted for the middle-states soution instead of using separate lists. Further implementation details can be found in the next section [[2.3](#23-static-evolution)].
 
 ### 1.2 Ordered Evolution
-The ordered evolution is simple in its implementation and does everything in a couple of nested loops; but this same simplicity is also reason reason of impairment for parallelization, and consequently scalability performance. Not all parallelization is impossible, multiprocessing works and is as effective as for the static evolution, only multithreading cannot bring any benefit and the reason is in the ordered nature of the approach and the way OpenMP parallelizes the work; let's analyze both in order. The ordered evolution is intrisically serial because when one cell gets updated its state will affect the other cells coming after that are around it. OpenMP handles multithreading of for loops assigning iterations to the threads, the assignment can be static or dynamic but in both cases a thread with its assigned iterations has to wait for all previous iterations to be done before he can execute its own. In the end, the whole computation is serial even if it is carried on multiple threads. For this reason I didn't implement multithreading for this evolution. MPI implementation is the same for both evolutions and it is discussed in section [[1.4](#14-multiprocessing)].
+The ordered evolution is simple in its implementation and does everything in a couple of nested loops; but this same simplicity is also reason reason of impairment for parallelization, and consequently scalability performance. Not all parallelization is impossible, multiprocessing works and is as effective as for the static evolution, only multithreading cannot bring any benefit and the reason is in the ordered nature of the approach and the way OpenMP parallelizes the work; let's analyze both in order. The ordered evolution is intrisically serial because when one cell gets updated its state will affect the other cells coming after that are around it. OpenMP handles multithreading of for loops assigning iterations to the threads, the assignment can be static or dynamic but in both cases a thread with its assigned iterations has to wait for all previous iterations to be done before he can execute its own. In the end, the whole computation is serial even if it is carried on multiple threads. For this reason I did not implement multithreading for this evolution. MPI implementation is the same for both evolutions and it is discussed in section [[1.4](#14-multiprocessing)].
 
 ### 1.3 Multithreading
-I focused on the heaviest part for multithreading and I left singlethreaded other parts that could have been multi threaded to have a cleaner code. Results back me up in this decision. 
+I choose to focus my multithreading effort only on the heavyest part of the code, which is the evolution of the board itself. All other components that are neccessary but only function as a frame to the main part, even if they could exploit multithreading, I choose to leave single threaded. The reason for my choice was code clarity but most importantly it should not affect overall performance because all initializations and the set up for multiprocessing [[1.4](#14-multiprocessing)] is orders of magnitude faster than the evolution of the board. To cite one of the sources I linked above, Michael Abrash in his book Ghraphics Programming Black Book says this.
+
+> The first rule of optimization is: Only optimize where it matters.
+
+Where I did apply multithreading I tried to be strict with the data handling, all outside variables used inside the openMP area are explicitly marked and even the division policy I fixed the one which makes the most sense. 
 
 ### 1.4 Multiprocessing
-- handling of the board (splitting, reconeccting to save etc.)
+As I anticipated above there is a little set up to do for MPI to work properly and efficently. Main reason being the need for explicit comunication between the processes which for Game of Life, at least as I implemented it, is very much essential; but let's start from the beginning and explain why there is this need. My reasoning is pretty simple, I have a grid that I need to split up in blocks to hand off one per process. So this I did, the grid gets divided in rectangles and each gets sent to a process. The rectangles are all of the same size, so that each process has the same workload. Here comes the comunication problem, the outer cells in a block have some of the neighbours in other blocks and thus in other processes, where they can no longer be accessed. Now I need to carefully propagate all outer cells of all blocks to the right corresponding blocks; top row, right coloumn, bottom row and left coloumn go respectiely to top block, right block, bottom block and left block, but the four cells in the corners also need to be sent to their respective block in diagonal of the origin block. All this propagation has to be done at each evolution step before updating the grid and before checking the neighbours.  
+Last thing to consider for inter-process comunication is the need to save a snapshot of the grid during the evolution. When this necessity arises all blocks are gathered in the root process, the snap is saved and then the blocks are sent back each to the same process it came from, before finally proceding with the evolution.
 
-
-- all single-process operations handled by root process. This enables single-process execution of the code.
+There are many operations that need to be computed by a single process, I picked the root process to execute them. Picking the root process specifically ensures that the program will run even if launched with only one process.
 
 
 ### 1.5 Board generation
-`random_board()`, talk probability
-`easy_seed()` I have no requirement of true randomness so I don't care to use the time or whatever fancy way to get a completely different seed every time. 
+The assignment requires a mode where a grid gets generated given its dimensions but there is no indication as what the state of this grid should be, so here is what I did. The simplest solution would be to return an image of the requested size with always the same initial state. This would be possible since the minimum size of the grid is 100x100, the requirement would be for the state to be contained in this limit, and all the extra space could be all dead cells. What I did instead is generating a random state eache time. Generated the image I iterate through it and with a probability of 0.2 a cell gets marked as alive.
+
+Generating a new grid is one of the tasks my program executes with only one process, but I implemented multithreading since in inizialization mode creating a new grid is all the program does. Multithreading brings a problem with the random number generation that I discuss in section [[2.4](#24-board-generation)].
+
+To create a different seed for each grid instead of going all fancy with the `time.h` library I implemented a little seed generator using the string containing the name to give the final file. This works on the assumptions that the name of the image would contain some information about the size of the grid and there is no need to generate different grids of the same size. Since I am the only user of this code I can assure that these assumptions are met.   
 
 ### 1.6 Read and write image
-not implemented by me so no notes on approach or implementation, I just learned how to use them. Same for `swap_image()`.
+I will not comment on any function in the file `read_write_pgm_image.c` since I did not personally write it. I just used the functions in there, hopefully the way they were inteded to.
 
 ### 1.7 Time tracking
-multiple times for each run, what they mean, why.
+I used three different timers to gather data on the execution. The first, most general, timer I call "whole evolution timer" because it starts after the initial set up of reading the external parameters, reading the image and initializing MPI and just before launching the evolution. This timer ends just after
+the evolution. A second timer is all inside the evolution function but still times the whole evolution and is outside all evolution loops. Compared to the first timer it excludes the division of the grid into blocks [[1.4](#14-multiprocessing)]. The third and final timer is actually a measure of average time; the average time to propagate the outer cells of the blocks between processes. I decided to implement the last one because I was worried that it would take a significat portion of the execution; turns out I was wrong as you can see in the results section [[3](#3-results--discussion)]. 
 
 ### 1.8 Experimentation Environment
-- only EPYC, no THIN
-- only OpenMPI, no IntelMPI
+At the time I executed my program and got the tests results Orfeo was pretty busy all the time with, I guess, other students doing their own projects. I had a little hope I could run more tests than the strictly necessary but in the end I did not manage to. I ran all tests on EPYC nodes, I only touched THIN nodes for the second exercise. More over I only used OpenMPI and never IntelMPI. I do not have much to say about this because these were not choices I made but rather constraints I found myself in.
 
+### 1.9 Data collection
+how i collected the data for the tests.
 
 ## 2. Implementation
-### 2.1 Code management
+### 2.1 Repository structure
+        exercise1
+            include
+                gol.h
+            obj
+            snapshots
+            src
+                evolution_parallel.c
+                evolution.c
+                partition_mpi.c
+                read_write_pgm_image.c
+                simple_start.c
+                utilities.c
+            starts
+            data.csv
+            main.c
+            Makefile
+            report.pdf
+where,
+- `exercise1` contains all files relevant to the Game of Life assingment
+    - `include` constains the personal library
+        - `gol.h` is the library to link the functions in the `.c` files
+    - `obj` is a folder that stores the object file when the program gets compiled
+    - `snapshots` is the folder where the snapshots of the grid get saved during execution
+    - `src` is the folder with the program files
+    - `starts` is the folder that contains starting images
+    - `data.csv` is the file where I stored the results of the tests
+    - `main.c` is the main of the program
+    - `Makefile` is the Makefile for the program
+    - `report.pdf` this file you are reading!
 - How is the code managed, what is in which files, why is it. 
 
 ### 2.2 Cells states
@@ -103,6 +147,10 @@ multiple times for each run, what they mean, why.
 ### 2.6 Multiprocessing
 - not bundling together the sends and receives of the propagation for clarity
 
+### 2.7 Multithreading
+Since I choose a simple approach to the Game of Life all the heavy computation is inside for loops. 
+Since each iteration carries out almost the same amount of computation (check neighbours, if the state has to be changed, change it), there is no need to dynamically assing the iterations to the threads, I can save on the overhead and assign statically. The computational differences between iterations 
+
 ## 3. Results & Discussion
 for all tests:
 - commands of allocated resources
@@ -110,7 +158,7 @@ for all tests:
 - data plots
 - explanation
 
-### OpenMP scalability
+### 3.1 OpenMP scalability
 
         salloc -N1 -p EPYC -n128 --time=1:0:0
         export OMP_PLACES=cores
@@ -124,8 +172,11 @@ size,steps,evolution,"processor number","thread number","total time","evolution 
 1000,1000,1,1,32,2367646,2366288,21
 1000,1000,1,1,64,1302963,1300866,24
 
-### Strong MPI scalability
+### 3.2 Strong MPI scalability
 
-### Weak MPI scalability
+### 3.3 Weak MPI scalability
 
 ## 4. Conclusions 
+
+### 4.1 Simpler splitting of the grid
+The simplest method for splitting the grid would be to assign to each process groups of `n` rows or coloumns, depending on which is major, where `n` is the result of the size of the matrix divided by the number of processes. This approach has the same number of cells to propagate as the one implemented but is simpler because they are all grouped in only two rows. There would be no need for external coloumns propagation.

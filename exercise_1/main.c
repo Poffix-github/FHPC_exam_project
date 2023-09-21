@@ -152,7 +152,9 @@ int main( int argc, char **argv )
         
         if(rank == 0){
             printf("reading image\n");
-            read_pgm_image( &board, &maxval, &size, &size, fname);
+            char filepath[9+strlen(fname)] = "./starts/";
+            strcat(filepath, fname);
+            read_pgm_image( &board, &maxval, &size, &size, filepath);
         }
 
         MPI_Bcast(&maxval, 1, MPI_INT, 0, MPI_COMM_WORLD);

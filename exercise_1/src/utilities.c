@@ -84,7 +84,7 @@ void *random_board(const int size, char *string){
         for(int i=0; i<size; i++){
             for(int j=0; j<size; j++){
                 board[i*size +j] = (unsigned char) (rand() % 1001 > p ? 0 : 255); 
-                /* board[i][j] has p/10 chance to be alive */
+                /* board[i][j] has p/10 % chance to be alive */
             }
         }
     }
