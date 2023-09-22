@@ -5,7 +5,7 @@
 ## Table of Contents
 0. [Introduction](#0-introduction)  
     0.1 [Game](#01-game)  
-    0.2 [Orfeo](#02-orfeo)
+    0.2 [Orfeo](#02-orfeo)  
     0.3 [Report structure](#03-report-structure)
 1. [Methodology](#1-methodology)  
     1.1 [Static Evolution](#11-static-evolution)  
@@ -29,7 +29,8 @@
     3.2 [Strong MPI scalability](#32-strong-mpi-scalability)  
     3.3 [Weak MPI scalability](#33-weak-mpi-scalability)  
 4. [Conclusions](#4-conclusions)  
-    4.1 [Simpler splitting of the grid](#41-simpler-splitting-of-the-grid)
+    4.1 [Simpler splitting of the grid](#41-simpler-splitting-of-the-grid)  
+    4.2 [Core implementation as base for OpenMP and MPI](#42-core-implementation-as-base-for-openmp-and-mpi)
 
 
 ## 0. Introduction
@@ -82,6 +83,7 @@ Last thing to consider for inter-process comunication is the need to save a snap
 
 There are many operations that need to be computed by a single process, I picked the root process to execute them. Picking the root process specifically ensures that the program will run even if launched with only one process.
 
+I forgot to mention that this way to split the work between processes is called **domain decomposition**, which means that different processes do the same operations on different data.
 
 ### 1.5 Board generation
 The assignment requires a mode where a grid gets generated given its dimensions but there is no indication as what the state of this grid should be, so here is what I did. The simplest solution would be to return an image of the requested size with always the same initial state. This would be possible since the minimum size of the grid is 100x100, the requirement would be for the state to be contained in this limit, and all the extra space could be all dead cells. What I did instead is generating a random state eache time. Generated the image I iterate through it and with a probability of 0.2 a cell gets marked as alive.
@@ -250,7 +252,7 @@ The outer `if` condition ensures that a deadlock is never encountered; it divide
 
 ---
 
-One last thing to mention about the propagation is that I could have saved space and made the code slimmer by using a matrix to store all the data from other blocks and grouping up the sends and receives into one big send and one big receive. Additionally I would have problably also gained a little performance by doing this. The reason I did not follow this route is that the logic of sends and receives is not immediate to me and laying out every single operation has been a good exercise in parallelization mentality. As per the performance claim I already anticipated how the propagation is not the main drag, so in this aspect it is not a real concern.
+One last thing to mention about the propagation is that I could have saved space and made the code slimmer by using a matrix to store all the data from other blocks and grouping up the sends and receives into one big send and one big receive. Additionally I would have problably also gained a little performance by doing this. The reason I did not follow this route is that the logic of sends and receives is not immediate to me and laying out every single operation has been a good exercise in parallelization mentality.
 
 ### 2.7 Multithreading
 Since I choose a simple approach to the Game of Life all the heavy computation is inside for loops, nested for loops to be precise. 
@@ -269,6 +271,18 @@ In the code above there is the first part of static evolution to show how I impl
 ## 3. Results & Discussion
 Three tests were carried out on this code, a test on openMP scalability and two on MPI scalability. Each test has its own subsection were you can find a list of command line instructions to set up and run the test on Orfeo's terminal and the data produced by the test; both with hopefully a satisfactory explanation.
 
+The raw data presented will have the following form.
+|size|steps|evolution|processes|threads|tot time|evol time|avg propagation time|
+|---|---|---|---|---|---|---|---|
+|1000|	1000|	1|	1|	1|	72635616|	72632154|	7|
+
+- **size** is the dimension of the square grid;  
+- **steps** indicates the number of evoultion steps done by each run;  
+- **evolution** is the flag passed to the executable `gol.x` to indicate which kind of evolution to use. `1` stands for static evolution;  
+- **processes** is the number of MPI processes used in each run;  
+- **threads** is the number of openMP threads used by a run;  
+- **tot time**, **evolution time** and **avg propagation time** are the three timers, a throughout explanation for them can be found in section [[1.7](#17-time-tracking)]. All times are in microseconds.
+
 ### 3.1 OpenMP scalability
 Test description: 
 
@@ -286,28 +300,15 @@ The raw data collected in this test.
 
 |size|steps|evolution|processes|**threads**|tot time|**evol time**|avg propagation time|
 |---|---|---|---|---|---|---|---|
-|1000|	1000|	1|	1|	**1**|	72635616|	**72632154**|	7|
-|1000|	1000|	1|	1|	**2**|	36536630|	**36534854**|	7|
-|1000|  1000|	1|	1|	**4**|	18318647|	**18317337**|	7|
-|1000|	1000|	1|	1|	**8**|	9218737|	**9217823**|	15|
-|1000|	1000|	1|	1|	**16**|	4652385|	**4651514**|	19|
-|1000|	1000|	1|	1|	**32**|	2367646|	**2366288**|	21|
-|1000|	1000|	1|	1|	**64**|	1302963|	**1300866**|	24|
+|1000|	1000|	1|	1|	 **1**|	72635616|	**72632154**|	 7|
+|1000|	1000|	1|	1|	 **2**|	36536630|	**36534854**|	 7|
+|1000|  1000|	1|	1|	 **4**|	18318647|	**18317337**|	 7|
+|1000|	1000|	1|	1|	 **8**|	 9218737|	 **9217823**|	15|
+|1000|	1000|	1|	1|	**16**|	 4652385|	 **4651514**|	19|
+|1000|	1000|	1|	1|	**32**|	 2367646|	 **2366288**|	21|
+|1000|	1000|	1|	1|	**64**|	 1302963|	 **1300866**|	24|
 
-**size** is the dimension of the square grid;  
-**steps** indicates the number of evoultion steps done by each run;  
-**evolution** is the flag passed to the executable `gol.x` to indicate which kind of evolution to use. `1` stands for static evolution;  
-**processes** is the number of MPI processes used in each run;  
-**threads** is the number of openMP threads used by a run;  
-**tot time**, **evolution time** and **avg propagation time** are the three timers, a throughout explanation for them can be found in section [[1.7](#17-time-tracking)]. All times are in microseconds.
-
-As the number of threads doubles the evolution time halves, this is even more evident looking at the plot below. This behaviour can be explained by the nature of the evolution. As discussed in section [[2.7](#27-multithreading)] each iteration has a very similar computational load to all other iterations, so it is expected that each thread gets an even portion of the overall computational load of the program. Another foundamental point to explain this behaviour is the placement of the threads, and in this experiment each thread has its own core where it does not compete with other threads for cpu time. If this was not the case and multiple threads ran on the same core then some threads could fall behind because they would have to wait for the cpu to free, or in the best case where all threads get an even share of cpu time, there would still be no benefit in increasing the number of threads since they would all compete for the same resources; actually the time would slightly increase with the number of threads because of the overhead of openMP to distribute the iterations and cpu scheduling of the threads.
-
-|size|steps|evolution|processes|**threads**|tot time|**evol time**|avg propagation time|
-|---|---|---|---|---|---|---|---|
-|1920|	1000|	1|	1|	64|	247556594|	247540577|	26|
-|1920|	1000|	1|	2|	64|	125833415|	125822970|	46|
-|1920|	1000|	1|	4|	64|	63860569|	63848344|	157|
+As the number of threads doubles the evolution time halves, this is even more evident looking at the plot below. This behaviour can be explained by the nature of the evolution. As discussed in section [[2.7](#27-multithreading)] each iteration has a very similar computational load to all other iterations, so it is expected that each thread gets an even portion of the overall computational load of the program. Another foundamental point to explain this behaviour is the placement of the threads, and in this experiment each thread has its own core where it does not compete with other threads for cpu time. If this was not the case and multiple threads ran on the same core then some threads could fall behind because they would have to wait for the cpu to free, or in the best case where all threads get an even share of cpu time, there would still be no benefit in increasing the number of threads since they would all compete for the same resources; actually the time would slightly increase along the number of threads because of the overhead of openMP to distribute the iterations and cpu scheduling of the threads.
 
 ---
 
@@ -324,24 +325,79 @@ Test description:
 
 All relevant command line istructions for this test.
 
+        salloc -N4 -n4 -p EPYC --time=00:10:00
+        mpirun gol.x -r -f start_1920px.pgm -n 1000 -e 1 -s 1000
 
+The number of nodes (`-N`) is set equal to the number of processes (`-n`), the default behaviour is to spread the processes over the nodes so it results in one process per node as per assignment.  
+The size of the grid is kept fixed at 1920x1920. The intent is by doing so to show the evolution time reducing as more work gets done in parallel and the amount of work stays consistent. By increasing the size of the grid along with the number of processes the highlight would be the propagation time, since the evolution workload of each process would remain the same but the number of nodes to comunicate with would increase; this is the focus of the weak MPI test in section [[3.3](#33-weak-mpi-scalability)].  
+Since the focus of this test is on MPI and multi-processing I decided to not use openMP and multithreading, so the number of threads per process is fixed to one during this test.
+
+The raw data collected in this test.
+
+|size|steps|evolution|**processes**|threads|tot time|**evol time**|avg propagation time|
+|---|---|---|---|---|---|---|---|
+|1920|	1000|	1|	**1**|	1|	247556594|	**247540577**|	   26|
+|1920|	1000|	1|	**2**|	1|	125833415|	**125822970**|	52251|
+|1920|	1000|	1|	**4**|	1|	 63860569|	 **63848344**|	55032|
 ---
+
+The EPYC nodes where I ran this test are a total of eight, unfortunately despite spending a week trying to allocate more than four nodes I was always unsuccesful. Still the data I collected gives space to considerations and I belive increasing further the number of nodes would have only confirmed the trend in the data. 
 
 <img src="./report-images/strong-MPI-scalability.png">
 
-*From `evolution_parallel.c`, plot of openMP scalability*
+*From `evolution_parallel.c`, plot of strong MPI scalability, time is evolution time*
 
 ---
+
+The first thing that is clear looking at the plot is that the evolution time tends to halve as the number of processors doubles. This is expected behaviour since the total workload is the same and is has been split evenly between the processes.  
+Something that should catch the attention is the very sizeable surge in average propagation time jumping from one to two processes. This is explained by the need for inter-node comunication at two processes which is not needed when the process is only one and the propagation takes almost no time (remember the times are in microseconds). Propagation time still increases going from two to four nodes, this might be because the number of different nodes a process comunicates with goes from one to three.  
+
+Some parallels can be drawn between this data and the data of the previous test. In particular the first line of data in both tests differs only for the size of the grid, while other input parameters are the same. There is also a difference in evolution time (and total time) and the two are probably connected since the ratio between sizes (`3,68`) is similar to the ratio between evolution times (`3,40`).  
+The surge in average propagation time is not present in the data for the openMP test which uses only one process and one node.  
+Overall these connections increase the credibility of the data since different runs with similar parameters return comparable results.
 
 ### 3.3 Weak MPI scalability
 Test description:
 
->given an initial size, show to run-time behaviour when you scale up from 1 socket (saturated with OpenMP threads) up to as many sockets you can keeping fixed the workload per MPI task
+>given an initial size, show the run-time behaviour when you scale up from 1 socket (saturated with OpenMP threads) up to as many sockets you can keeping fixed the workload per MPI task
 
 All relevant command line istructions for this test.
 
+        salloc -N2 -n256 -p EPYC --time=00:10:00
+        srun -n4 --cpus-per-task=64 mpirun --map-by socket gol.x -r -f start_200px.pgm -n 1000 -e 1 -s 1000
+
+Running on EPYC so number of threads to fill all cores in a cpu is 64 (not using logical threads, which are 2 per core and would make a total of 128 threads). Each node has two sockets so the numbers of nodes to allocate is half the number of processes to have one process per node. Total number of tasks to allocare is number of processes multiplied the number of threads (the model instruction above is allocating 4 processes so 4*64=256).  
+The size of the grid is such that each MPI process works on a 100x100 block.
+
+The raw data collected in this test.
+
+|size|steps|evolution|**processes**|threads|tot time|evol time|**avg propagation time**|
+|---|---|---|---|---|---|---|---|
+|100|1000|	1|	**1**|	64|	 1912650| 1908870|    **1**|
+|200|1000|  1|	**4**|	64|	57035128|57023156|**52181**|
+
+Here I encoutered the same problem of testing strong MPI scalability where allocating more than four nodes has been impossible. My plan was to run the test with 1, 4, 9 and 16 processes. These numbers are all squares because my code does not allow for rectangular grids, it allows for rectangular blocks but i fixed the size of a block to 100x100 for this test, so the only way to accomodate square blocks in a square grid is to have an even number of blocks in the rows and the coloumns. Anyway, to allocate 9 processes I need five nodes and I could not get a hold of them ever. Nevertheless some considerations can still be drawn.
+
+---
+
+<img src="./report-images/weak-MPI-scalability.png">
+
+*From `evolution_parallel.c`, plot of weak MPI scalability, time is average propagation time*
+
+---
+
+Opposite of the two previous test this plot does not focus on evolution time but just on the average propagation time. The reason being, that the workload of the evolution per process is still the same using one or four processes. The increase in evolution time is not an actual increase of computation load is actually an increase of propagation time. Consider the first line of data, taking the average propagation time (`1`) and multiplying it by the number of evolution steps (`1000`) we get `1000` microseconds, number 10^3 times smaller than the evolution time so not a revelant portion of code for performance as I have stated so far. Now consider the second line of data, average propagation time = `72181` microseconds, multiplied by `1000` makes `72'181'000` microseconds, just ~ 5 milion less microseconds than the logged evolution time. The propagation time is the most relevant portion of code for performance by one order of magnitude. Single digit seconds for evolution time is actually in line with other one process 64 threads runs. Average propagation time being in the low 70 thousand microseconds is consistent with the other two node run. So the difference must depend on the remaining parameter that changes between these runs, the size of the grid. I used a small grid for this test compared to the others, giving a 100x100 block per process while the other tests had blocks of at least around 450 cells per dimension. This is actually not the first time that this happens, even with the 4 processes run for strong MPI the propagation time is more relevant than the evolution time, only when the block reaches the thousands cells per dimension evolution time is significantly heavier than propagation time. I take from this that using multiprocessing with blocks too small is not advisable.  
+It would have been interesting seeing how the propagation is affected by increasing the number of nodes a process comunicates with. Using four processes two blocks of the eight to comunicate with are in the same node, while testing with nine would have lowered the number to the minimum one, and potentially zero depending on the allocation of the processes related to their rank. 
+
 
 ## 4. Conclusions 
+Overall I think my implementation of this project has proved to be capable of scaling effectively both in multithreading and in multiprocessing.  
+I couldn't test the ceiling of multiprocessing capabilites unfortunately, but I will try after the deadline and maybe you would be interested in the results I find. 
+
+Each subsection covers one element of the project and constains my considerations regarding what worked well and what could have been improved in light of the data gathered. 
 
 ### 4.1 Simpler splitting of the grid
-The simplest method for splitting the grid would be to assign to each process groups of `n` rows or coloumns, depending on which is major, where `n` is the result of the size of the matrix divided by the number of processes. This approach has the same number of cells to propagate as the one implemented but is simpler because they are all grouped in only two rows. There would be no need for external coloumns propagation.
+A simpler method for splitting the grid would be to assign to each process groups of `n` rows or coloumns, depending on which is major, where `n` is the result of the size of the matrix divided by the number of processes. This approach has the same number of cells to propagate as the one implemented but is simpler because they are all grouped in only two rows. There would be no need for external coloumns propagation. Still all the problems with checking the neighbours would apply. 
+
+### 4.2 Core implementation as base for OpenMP and MPI
+The simple implementation of the core game made it simple implementing multiprocessing and almost trivial implementing multithreading. As per its performance the results show that at the dimensions tested it rivaled with MPI propagation in some cases and all tests run in at most few minutes but I cannot calculate the FLOPS because I do not have the number of instructions executed so I do not know if it is actually good performance. Moreover I am not aware of any real world application of the Game of Life and as far as I know all the optimization on this problem is done either for the sake of the challenge or for research. Maybe there are MPI functions that would make the propagation more efficent but with my implementation of the game I cannot think of a better way to propagate the data. Overall I would say that it certantly suffices for this tests but any serious application should look into optimizing it. To give further insight in the optimization I would procede aiming at minizing the amount of data to propagate through the processes. 
