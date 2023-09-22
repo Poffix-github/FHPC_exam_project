@@ -170,7 +170,7 @@ int main( int argc, char **argv )
 
                 // for(int i=0; i<7; i++){
                 //     omp_set_num_threads(n_threads[i]);
-                    omp_set_num_threads(12);
+                    omp_set_num_threads(1);
   
                     // #pragma omp parallel
                     // {

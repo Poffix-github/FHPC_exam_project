@@ -122,7 +122,7 @@ A list of all relevant files and folders in the repository
             Makefile
             report.pdf
 where,
-- `exercise_1` contains all files relevant to the Game of Life assingment
+- `exercise_1` contains all files relevant to the Game of Life assignment
     - `include` constains the personal library
         - `gol.h` is the library to link the functions in the `.c` files
     - `obj` is a folder that stores the object file when the program gets compiled
@@ -254,32 +254,78 @@ One last thing to mention about the propagation is that I could have saved space
 
 ### 2.7 Multithreading
 Since I choose a simple approach to the Game of Life all the heavy computation is inside for loops, nested for loops to be precise. 
-Since each iteration carries out almost the same amount of computation - check neighbours, if the state has to be changed, change it - there is no need to dynamically assing the iterations to the threads, I can save on the overhead and assign statically. The computational differences between iterations depend on the state of the neighbours which determine if the state of the cell has to be changed or not. The checks for the neighbours are equal to all iterations, what can change is how many times the counter of alive neighbours gets increased. But all things considered the possible difference in load is at most nine write operations (eight neighbours plus the cell itself), which is really not a big number.
+Since each iteration carries out almost the same amount of computation - check neighbours, if the state has to be changed, change it - there is no need to dynamically assing the iterations to the threads, I can save on the overhead and assign statically. The computational differences between iterations depend on the state of the neighbours which in turn, determine if the state of the cell has to be changed or not. The checks for the neighbours are equal for all iterations, what can change is how many times the counter of alive neighbours gets increased. But all things considered the possible difference in load is at most of nine write operations (eight neighbours plus the cell itself), which is really not a big number and it justifies the static assignment.
+
+---
+
+<img src="./report-images/openMP.png" height="300">
+
+*From `evolution_parallel.c`, an example of openMP implementation*
+
+---
+
+In the code above there is the first part of static evolution to show how I implemented openMP. There is another nested for loop below in the actual code that is not seen here, that is the reason why I open the parallel region first and then I call the handling of the loops. The variable are shared in the whole parallel region. There are two perfetcly nested loops so I can use the `collapse(2)` flag to afffect both with one call.
 
 ## 3. Results & Discussion
-for all tests:
-- commands of allocated resources
-- commands for running experiment
-- data plots
-- explanation
+Three tests were carried out on this code, a test on openMP scalability and two on MPI scalability. Each test has its own subsection were you can find a list of command line instructions to set up and run the test on Orfeo's terminal and the data produced by the test; both with hopefully a satisfactory explanation.
 
 ### 3.1 OpenMP scalability
+Test description: 
+
+>fix the number of MPI tasks to 1 per socket, and report the behaviour of the code when you increase the number of threads per task from 1 up to the number of cores present on the socket
+
+All relevant command line istructions for this test.
 
         salloc -N1 -p EPYC -n128 --time=1:0:0
         export OMP_PLACES=cores
         srun -n1 --cpus-per-task=64 mpirun --map-by socket gol.x -r -f start_1000px.pgm -n 1000 -e 1 -s 1000
-size,steps,evolution,"processor number","thread number","total time","evolution time","average propagation time"
-1000,1000,1,1,1,72635616,72632154,7
-1000,1000,1,1,2,36536630,36534854,7
-1000,1000,1,1,4,18318647,18317337,7
-1000,1000,1,1,8,9218737,9217823,15
-1000,1000,1,1,16,4652385,4651514,19
-1000,1000,1,1,32,2367646,2366288,21
-1000,1000,1,1,64,1302963,1300866,24
+
+The number of threads is changed inside `gol.x`. As per instructions, the threads populate different cores (`OMP_PLACES=cores`) and fill up the socket where the process runs (`--map-by socket`).
+
+The raw data collected in this test.
+
+|size|steps|evolution|processes|**threads**|tot time|**evol time**|avg propagation time|
+|---|---|---|---|---|---|---|---|
+|1000|	1000|	1|	1|	**1**|	72635616|	**72632154**|	7|
+|1000|	1000|	1|	1|	**2**|	36536630|	**36534854**|	7|
+|1000|  1000|	1|	1|	**4**|	18318647|	**18317337**|	7|
+|1000|	1000|	1|	1|	**8**|	9218737|	**9217823**|	15|
+|1000|	1000|	1|	1|	**16**|	4652385|	**4651514**|	19|
+|1000|	1000|	1|	1|	**32**|	2367646|	**2366288**|	21|
+|1000|	1000|	1|	1|	**64**|	1302963|	**1300866**|	24|
+
+**size** is the dimension of the square grid;  
+**steps** indicates the number of evoultion steps done by each run;  
+**evolution** is the flag passed to the executable `gol.x` to indicate which kind of evolution to use. `1` stands for static evolution;  
+**processes** is the number of MPI processes used in each run;  
+**threads** is the number of openMP threads used by a run;  
+**tot time**, **evolution time** and **avg propagation time** are the three timers, a throughout explanation for them can be found in section [[1.7](#17-time-tracking)]. All times are in microseconds.
+
+ As the number of threads doubles the evolution time halves, this is even more evident looking at the plot below. This behaviour can be explained by the nature of the evolution. As discussed in section [[2.7](#27-multithreading)] each iteration has a very similar computational load to all other iterations, so it is expected that each thread gets an even portion of the overall computational load of the program. Another foundamental point to explain this behaviour is the placement of the threads, and in this experiment each thread has its own core where it does not compete with other threads for cpu time. If this was not the case and multiple threads ran on the same core then some threads could fall behind because they would have to wait for the cpu to free, or in the best case where all threads get an even share of cpu time, there would still be no benefit in increasing the number of threads since they would all compete for the same resources; actually the time would slightly increase with the number of threads because of the overhead of openMP to distribute the iterations and cpu scheduling of the threads.
+
+---
+
+<img src="./report-images/openMP-scalability.png" height="300">
+
+*From `evolution_parallel.c`, plot of openMP scalability*
+
+---
 
 ### 3.2 Strong MPI scalability
+Test description:
+
+>given a fixed size (you may opt for several increasing sizes ) show the run-time behaviour when you increase the number of MPI tasks (use as many nodes as possible, depending on the machine you run on)
+
+All relevant command line istructions for this test.
+
 
 ### 3.3 Weak MPI scalability
+Test description:
+
+>given an initial size, show to run-time behaviour when you scale up from 1 socket (saturated with OpenMP threads) up to as many sockets you can keeping fixed the workload per MPI task
+
+All relevant command line istructions for this test.
+
 
 ## 4. Conclusions 
 
