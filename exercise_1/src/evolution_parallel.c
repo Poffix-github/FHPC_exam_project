@@ -314,14 +314,12 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             tprop += get_time(tpstart, tpend);
         }
 
-        #pragma omp parallel shared(BLOCKROWS, BLOCKCOLS, block, top_left, top_row, top_right, 
-                                    left_clmn, right_clmn, btm_left, btm_row, btm_right)
+        #pragma omp parallel shared(BLOCKROWS, BLOCKCOLS, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
         {
             #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKROWS; i++){
                 for(int j=0; j<BLOCKCOLS; j++){
-                    if(check_neighbours(block, BLOCKROWS, BLOCKCOLS, i, j, top_left, top_row, top_right, 
-                                        left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1){ /* cell will become or remain alive */
+                    if(check_neighbours(block, BLOCKROWS, BLOCKCOLS, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1){ /* cell will become or remain alive */
                         if(block[i*BLOCKCOLS + j] <= 127) block[i*BLOCKCOLS + j] = 127;
                     }else{
                         if(block[i*BLOCKCOLS + j] >= 128) block[i*BLOCKCOLS + j] = 128;
