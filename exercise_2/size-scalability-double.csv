@@ -1,0 +1,21 @@
+library;precision;dim_M;dim_N;time;unit;GFLOPS;platform;nthreads;allocation policy
+openblas;double;2000;2000;0.107141333;0;149.335458;EPYC;64;default
+openblas;double;4000;4000;0.668501862;0;191.472915;EPYC;64;default
+openblas;double;6000;6000;1.756256965;1;245.977672;EPYC;64;default
+openblas;double;8000;8000;2.9445652;2;347.759323;EPYC;64;default
+openblas;double;10000;10000;4.299582196;4;465.161476;EPYC;64;default
+openblas;double;12000;12000;5.594055855;5;617.798622;EPYC;64;default
+openblas;double;14000;14000;9.221777295;9;595.113049;EPYC;64;default
+openblas;double;16000;16000;9.331443743;9;877.892020;EPYC;64;default
+openblas;double;18000;18000;17.147549;17;680.213830;EPYC;64;default
+openblas;double;20000;20000;17.5181895;17;938.316320;EPYC;64;default
+mkl;double;2000;2000;0.78581037;0;203.611464;EPYC;64;default
+mkl;double;4000;4000;0.236883815;0;540.349285;EPYC;64;default
+mkl;double;6000;6000;0.740483091;0;583.402923;EPYC;64;default
+mkl;double;8000;8000;1.789656804;1;572.176742;EPYC;64;default
+mkl;double;10000;10000;3.456870109;3;578.558042;EPYC;64;default
+mkl;double;12000;12000;5.291990513;5;653.062395;EPYC;64;default
+mkl;double;14000;14000;8.819026171;8;622.290930;EPYC;64;default
+mkl;double;16000;16000;9.434744581;9;868.279997;EPYC;64;default
+mkl;double;18000;18000;15.716069;15;742.170337;EPYC;64;default
+mkl;double;20000;20000;19.540249;19;818.822721;EPYC;64;default

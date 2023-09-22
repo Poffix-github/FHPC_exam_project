@@ -1,0 +1,11 @@
+library;precision;dim_M;dim_N;time;unit;GFLOPS;platform;nthreads;allocation policy
+mkl;doube;11000;11000;40.38241052;;66.486437;THIN;1;default
+mkl;doube;11000;110001;3.424646921;;198.291994;THIN;3;default
+mkl;doube;11000;11000;6.566330048;;405.401492;THIN;6;default
+mkl;doube;11000;11000;4.353933313;;611.401188;THIN;9;default
+mkl;doube;11000;11000;3.250093458;;819.053370;THIN;12;default
+openblas;doube;11000;11000;41.777083307;;63.719144;THIN;1;default
+openblas;doube;11000;11000;17.429475314;;152.729784;THIN;3;default
+openblas;doube;11000;11000;10.263371120;;259.368970;THIN;6;default
+openblas;doube;11000;11000;6.833187412;;389.569295;THIN;9;default
+openblas;doube;11000;11000;3.323171796;;801.041945;THIN;12;default
