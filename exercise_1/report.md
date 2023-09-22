@@ -301,13 +301,19 @@ The raw data collected in this test.
 **threads** is the number of openMP threads used by a run;  
 **tot time**, **evolution time** and **avg propagation time** are the three timers, a throughout explanation for them can be found in section [[1.7](#17-time-tracking)]. All times are in microseconds.
 
- As the number of threads doubles the evolution time halves, this is even more evident looking at the plot below. This behaviour can be explained by the nature of the evolution. As discussed in section [[2.7](#27-multithreading)] each iteration has a very similar computational load to all other iterations, so it is expected that each thread gets an even portion of the overall computational load of the program. Another foundamental point to explain this behaviour is the placement of the threads, and in this experiment each thread has its own core where it does not compete with other threads for cpu time. If this was not the case and multiple threads ran on the same core then some threads could fall behind because they would have to wait for the cpu to free, or in the best case where all threads get an even share of cpu time, there would still be no benefit in increasing the number of threads since they would all compete for the same resources; actually the time would slightly increase with the number of threads because of the overhead of openMP to distribute the iterations and cpu scheduling of the threads.
+As the number of threads doubles the evolution time halves, this is even more evident looking at the plot below. This behaviour can be explained by the nature of the evolution. As discussed in section [[2.7](#27-multithreading)] each iteration has a very similar computational load to all other iterations, so it is expected that each thread gets an even portion of the overall computational load of the program. Another foundamental point to explain this behaviour is the placement of the threads, and in this experiment each thread has its own core where it does not compete with other threads for cpu time. If this was not the case and multiple threads ran on the same core then some threads could fall behind because they would have to wait for the cpu to free, or in the best case where all threads get an even share of cpu time, there would still be no benefit in increasing the number of threads since they would all compete for the same resources; actually the time would slightly increase with the number of threads because of the overhead of openMP to distribute the iterations and cpu scheduling of the threads.
+
+|size|steps|evolution|processes|**threads**|tot time|**evol time**|avg propagation time|
+|---|---|---|---|---|---|---|---|
+|1920|	1000|	1|	1|	64|	247556594|	247540577|	26|
+|1920|	1000|	1|	2|	64|	125833415|	125822970|	46|
+|1920|	1000|	1|	4|	64|	63860569|	63848344|	157|
 
 ---
 
-<img src="./report-images/openMP-scalability.png" height="300">
+<img src="./report-images/openMP-scalability.png" >
 
-*From `evolution_parallel.c`, plot of openMP scalability*
+*From `evolution_parallel.c`, plot of strong MPI scalability*
 
 ---
 
@@ -318,6 +324,14 @@ Test description:
 
 All relevant command line istructions for this test.
 
+
+---
+
+<img src="./report-images/strong-MPI-scalability.png">
+
+*From `evolution_parallel.c`, plot of openMP scalability*
+
+---
 
 ### 3.3 Weak MPI scalability
 Test description:

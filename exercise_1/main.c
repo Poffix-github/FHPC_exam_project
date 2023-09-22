@@ -152,7 +152,7 @@ int main( int argc, char **argv )
         
         if(rank == 0){
             printf("reading image\n");
-            char filepath[9+strlen(fname)] = "./starts/";
+            char filepath[100] = "./starts/";
             strcat(filepath, fname);
             read_pgm_image( &board, &maxval, &size, &size, filepath);
         }

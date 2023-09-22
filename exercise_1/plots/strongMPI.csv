@@ -1,3 +1,4 @@
+size,steps,evolution,"processor number","thread number","total time","evolution time","average propagation time"
 1920,1000,1,1,64,247556594,247540577,26
 1920,1000,1,2,64,125833415,125822970,46
 1920,1000,1,4,64,63860569,63848344,157
