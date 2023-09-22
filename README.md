@@ -1,0 +1,1 @@
+Assignments for the exam of Foundations of High-Performance Computing in the master of Data Science and Scientific Computing at Università degli Studi di Trieste

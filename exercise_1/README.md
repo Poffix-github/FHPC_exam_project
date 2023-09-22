@@ -1,0 +1,1 @@
+Look at `report.pdf` to find a breakdown of the structure of this folder
