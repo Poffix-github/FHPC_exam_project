@@ -115,6 +115,8 @@ int main( int argc, char **argv )
 
     double tstart, tend;
 
+    printf("hello\n");
+
     MPI_Init_thread(NULL,NULL, MPI_THREAD_FUNNELED, &mpi_provided_thread_level);
 
     if ( mpi_provided_thread_level < MPI_THREAD_FUNNELED ) {
