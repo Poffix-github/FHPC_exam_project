@@ -23,7 +23,7 @@
 #define NPCOLS 1
 
 /* Count the number of alive neighbours */
-char check_neighbours(const void* board, const int BLROWS, const int BLCOLS, const int i, const int j, 
+char check_neighbours(const unsigned char* board, const int BLROWS, const int BLCOLS, const int i, const int j, 
                       const unsigned char t_l, const unsigned char* top, const unsigned char t_r, const unsigned char* left, 
                       const unsigned char* right, const unsigned char b_l, const unsigned char* bottom, const unsigned char b_r, const int RANK){
     const int off_sets[NUM_NEIGHBOURS][2] = {{-1, -1}, {-1, 0}, {-1, 1},
@@ -34,7 +34,7 @@ char check_neighbours(const void* board, const int BLROWS, const int BLCOLS, con
     /* inner cell */
     if(i != 0 && j != 0 && i != BLROWS-1 && j != BLCOLS-1){
         for(int z=0; z<NUM_NEIGHBOURS; z++){
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+            if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         }
     }else if(i == 0){     /* outer cell */
         if(j == 0){
@@ -42,48 +42,48 @@ char check_neighbours(const void* board, const int BLROWS, const int BLCOLS, con
             if(top[0] >= 128) count++;
             if(top[1] >= 128) count++;
             if(left[0] >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
+            if(board[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
             if(left[1] >= 128) count++;
             for(int z=6; z<NUM_NEIGHBOURS; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+                if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         }else if(j == BLCOLS-1){
             if(top[BLCOLS-2] >= 128) count++;
             if(top[BLCOLS-1] >= 128) count++;
             if(t_r >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
+            if(board[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
             if(right[0] >= 128) count++;
             for(int z=5; z<NUM_NEIGHBOURS-1; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+                if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
             if(right[1] >= 128) count++;
         }else{
             if(top[j-1] >= 128) count++;
             if(top[j] >= 128) count++;
             if(top[j+1] >= 128) count++;
             for(int z=3; z<NUM_NEIGHBOURS; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+                if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         }
     }else if(i == BLROWS-1){
         if(j == 0){
             if(left[BLROWS-2] >= 128) count++;
             for(int z=1; z<3; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+                if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
             if(left[BLROWS-1] >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
+            if(board[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
             if(b_l >= 128) count++;
             if(bottom[0] >= 128) count++;
             if(bottom[1] >= 128) count++;
         }else if(j == BLCOLS-1){
             for(int z=0; z<2; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+                if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
             if(right[BLROWS-2] >= 128) count++;
-            if(((unsigned char*)board)[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
+            if(board[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
             if(right[BLROWS-1] >= 128) count++;
             if(bottom[BLCOLS-2] >= 128) count++;
             if(bottom[BLCOLS-1] >= 128) count++;
             if(b_r >= 128) count++;
         }else{
             for(int z=0; z<5; z++)
-                if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+                if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
             if(bottom[j-1] >= 128) count++;
             if(bottom[j] >= 128) count++;
             if(bottom[j+1] >= 128) count++;
@@ -91,24 +91,22 @@ char check_neighbours(const void* board, const int BLROWS, const int BLCOLS, con
     }else if(j == 0){
         if(left[i-1] >= 128) count++;
         for(int z=1; z<3; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+            if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
     	if(left[i] >= 128) count++;
-        if(((unsigned char*)board)[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
+        if(board[(i + off_sets[4][0])*BLCOLS + (j + off_sets[4][1])] >= 128) count++;
         if(left[i+1] >= 128) count++;
         for(int z=6; z<NUM_NEIGHBOURS; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+            if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
     }else{
         for(int z=0; z<2; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+            if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         if(right[i-1] >= 128) count++;
-        if(((unsigned char*)board)[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
+        if(board[(i + off_sets[3][0])*BLCOLS + (j + off_sets[3][1])] >= 128) count++;
         if(right[i] >= 128) count++;
         for(int z=5; z<7; z++)
-            if( ((unsigned char*)board)[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
+            if( board[(i + off_sets[z][0])*BLCOLS + (j + off_sets[z][1])] >= 128 ) count++;
         if(right[i+1] >= 128) count++;
-    }   
-
-    // if(RANK == 0) printf("board[%d][%d] count = %d\n",i,j,count);
+    }
 
     return count == 2 || count == 3 ? 1 : 0;    /* if 2 or 3 neighbour cells are alive, 
                                                  * the current cell has to become, or remain, alive; 
@@ -210,14 +208,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     }
 
     unsigned char block[BLOCKROWS*BLOCKCOLS];
-    #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS)
     for (int ii=0; ii<BLOCKROWS*BLOCKCOLS; ii++) block[ii] = 0;
-
-    // if(RANK == 0){
-    //     printf("block inizializzato\n");
-    //     for (int ii=0; ii<BLOCKSIZE*BLOCKSIZE; ii++) printf("%d ",block[ii]);
-    //     printf("\n");
-    // }
 
     MPI_Datatype blocktype;
     MPI_Datatype blocktype2;
@@ -228,7 +219,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
     int disps[NPROWS*NPCOLS];
     int counts[NPROWS*NPCOLS];
-    #pragma omp parallel for schedule(static) collapse(2) shared(BLOCKROWS, BLOCKCOLS, disps, counts)
     for (int ii=0; ii<NPROWS; ii++) {
         for (int jj=0; jj<NPCOLS; jj++) {
             disps[ii*NPCOLS+jj] = ii*DIM*BLOCKROWS+jj*BLOCKCOLS;
@@ -236,19 +226,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         }
     }
 
-    // if(RANK == 0){
-    //     printf("displacement initialized\n");
-    //     for (int i=0; i<NPROWS*NPCOLS; i++) printf("%d ", disps[i]); /*0, 2, 8, 10*/
-    //     printf("\n");
-
-    //     printf("counts initialized\n");
-    //     for (int i=0; i<NPROWS*NPCOLS; i++) printf("%d ", counts[i]);
-    //     printf("\n");
-    // }
-
     MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
-
-    // printf("scatter done\n");
 
     MPI_Status status;
     unsigned char btm_row[BLOCKCOLS];
@@ -258,35 +236,10 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
     unsigned char temp[BLOCKROWS];
     unsigned char top_left, top_right, btm_left, btm_right;
 
-    #pragma omp parallel
-    {
-        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, btm_row)
-        for (int ii=0; ii<BLOCKCOLS; ii++) btm_row[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, top_row)
-        for (int ii=0; ii<BLOCKCOLS; ii++) top_row[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, left_clmn)
-        for (int ii=0; ii<BLOCKROWS; ii++) left_clmn[ii] = 0;
-        #pragma omp parallel for schedule(static) shared(BLOCKROWS, BLOCKCOLS, right_clmn)
-        for (int ii=0; ii<BLOCKROWS; ii++) right_clmn[ii] = 0;
-    }
-
-    // if(RANK == 0){
-    //     printf("btm_row initialized\n");
-    //     for (int i=0; i<BLOCKSIZE; i++) printf("%d ", btm_row[i]);
-    //     printf("\n");
-
-    //     printf("top_row initialized\n");
-    //     for (int i=0; i<BLOCKSIZE; i++) printf("%d ", top_row[i]);
-    //     printf("\n");
-
-    //     printf("left_clmn initialized\n");
-    //     for (int i=0; i<BLOCKSIZE; i++) printf("%d ", left_clmn[i]);
-    //     printf("\n");
-        
-    //     printf("right_clmn initialized\n");
-    //     for (int i=0; i<BLOCKSIZE; i++) printf("%d ", right_clmn[i]);
-    //     printf("\n");   
-    // }
+    for (int ii=0; ii<BLOCKCOLS; ii++) btm_row[ii] = 0;
+    for (int ii=0; ii<BLOCKCOLS; ii++) top_row[ii] = 0;
+    for (int ii=0; ii<BLOCKROWS; ii++) left_clmn[ii] = 0;
+    for (int ii=0; ii<BLOCKROWS; ii++) right_clmn[ii] = 0;
 
     double tbegin, tend, tpstart, tpend;
     int tevo[2]={0,0}, tprop=0;
@@ -356,19 +309,6 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
         }
 
-        // printf("propagation done\n");
-
-        // for(int p=0; p<NUM_PROC; p++){
-            // if(RANK == 0){
-            //     printf("RANK %d\n", RANK);
-            //     printf(" top_1: %d   top_2: %d    top_3: %d    top_4: %d\n", top_left, top_row[0], top_row[1], top_right);
-            //     printf("left_1: %d                           right_1: %d\n", left_clmn[0], right_clmn[0]);
-            //     printf("left_2: %d                           right_2: %d\n", left_clmn[1], right_clmn[1]);
-            //     printf(" btm_1: %d   btm_2: %d    btm_3: %d    btm_4: %d\n", btm_left, btm_row[0], btm_row[1], btm_right);
-            // }
-            // MPI_Barrier(MPI_COMM_WORLD);
-        // }
-
         if(RANK == 0){
             tpend = MPI_Wtime();
             tprop += get_time(tpstart, tpend);
@@ -376,37 +316,18 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
 
         #pragma omp parallel shared(BLOCKROWS, BLOCKCOLS, block, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right)
         {
-            // if(RANK == 0) printf("ciao sono il thread %d\n", omp_get_thread_num());
-            // if(RANK == 0){
-            //     for(int i=0; i<BLOCKSIZE; i++){
-            //         for(int j=0; j<BLOCKSIZE; j++){
-            //             printf("%d ", block[i*BLOCKSIZE+j]);
-            //         }
-            //         printf("\n");
-            //     }
-            // }
-
             #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKROWS; i++){
                 for(int j=0; j<BLOCKCOLS; j++){
                     if(check_neighbours(block, BLOCKROWS, BLOCKCOLS, i, j, top_left, top_row, top_right, left_clmn, right_clmn, btm_left, btm_row, btm_right, RANK) == 1){ /* cell will be or remain alive */
-                        if(*(((unsigned char*)block) + i*BLOCKCOLS + j) <= 127) *(((unsigned char*)block) + i*BLOCKCOLS + j) = 127;
+                        if(block[i*BLOCKCOLS + j] <= 127) block[i*BLOCKCOLS + j] = 127;
                     }else{
-                        if(*(((unsigned char*)block) + i*BLOCKCOLS + j) >= 128) *(((unsigned char*)block) + i*BLOCKCOLS + j) = 128;
+                        if(block[i*BLOCKCOLS + j] >= 128) block[i*BLOCKCOLS + j] = 128;
                     }
 
                 }
             }
 
-            // if(RANK == 0){
-            //     for(int i=0; i<BLOCKSIZE; i++){
-            //         for(int j=0; j<BLOCKSIZE; j++){
-            //             printf("%d ", block[i*BLOCKSIZE+j]);
-            //         }
-            //         printf("\n");
-            //     }
-            // }
-            
             #pragma omp for schedule(static) collapse(2)
             for(int i=0; i<BLOCKROWS; i++){
                 for(int j=0; j<BLOCKCOLS; j++){
@@ -414,18 +335,7 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
                     else if(*(((unsigned char*)block) + i*BLOCKCOLS + j) == 128) *(((unsigned char*)block) + i*BLOCKCOLS + j) = 0;
                 }
             }
-
-            // if(RANK == 0){
-            //     for(int i=0; i<BLOCKSIZE; i++){
-            //         for(int j=0; j<BLOCKSIZE; j++){
-            //             printf("%d ", block[i*BLOCKSIZE+j]);
-            //         }
-            //         printf("\n");
-            //     }
-            // }
         }
-        // printf("evolution done\n");
-        
 
         if(s % SAVE == 0){
             MPI_Gatherv(block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD); 

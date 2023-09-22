@@ -1,10 +1,13 @@
 compilation_notes.txt
 .vscode
 exercise_1/report.md
-exercise_1/obj/*
+exercise_1/obj
+exercise_1/"report images"
 exercise_1/snapshots/*
 exercise_1/src/a.out
+exercise_1/src/partition_mpi.c
 exercise_1/src/partition_mpi.x
+exercise_1/src/simple_start.c
 exercise_1/starts/start_2*px.pgm
 exercise_1/starts/start_3000px.pgm
 exercise_1/starts/start_4000px.pgm

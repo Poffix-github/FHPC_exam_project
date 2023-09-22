@@ -74,12 +74,10 @@ void *random_board(const int size, char *string){
     char              *board;
     
     board = (char*)calloc( size*size, sizeof(char) );
-    
-    srand(easy_seed(string));
+
     #pragma omp parallel shared(board, size)
     {
-        const int THREAD_NUM = omp_get_thread_num();
-        srand(easy_seed(string)*THREAD_NUM);
+        srand(easy_seed(string)* omp_get_thread_num());
         #pragma for schedule(static) collapse(2)
         for(int i=0; i<size; i++){
             for(int j=0; j<size; j++){
