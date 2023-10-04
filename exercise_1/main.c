@@ -197,7 +197,7 @@ int main( int argc, char **argv )
                 }
                         
                 if( e == ORDERED ){
-                    evolution_ordered(board, size, n, maxval, s);
+                    evolution_ordered(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
                 }else{ 
                     evolution_static(board, size, n, maxval, s, num_proc, rank, &evo_time, &avg_propT);
                 }

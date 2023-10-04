@@ -2,7 +2,7 @@
 
 /* evolution_parallel.c */
 
-void evolution_ordered(void* board, const int dim, const int steps, const int maxval, const int save);
+void evolution_ordered(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK, int* evo_T, int* avg_propT);
 
 void evolution_static(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK, int* evo_T, int* avg_propT);
 

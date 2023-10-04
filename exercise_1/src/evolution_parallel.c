@@ -135,27 +135,6 @@ char check_neighbours_ord(const void* board, const int dim, const int i, const i
                                                  */
 }
 
-/* Evolves the whole board once. 
- * The evolution is ordered, meaning by row and from the top left cell.
- */
-void evolution_ordered(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE){
-    for(int s=0; s<STEPS; s++){
-        // TODO: MPI
-        for(int i=0; i<DIM; i++){
-            for(int j=0; j<DIM; j++){
-                if(check_neighbours_ord(board, DIM, i, j) == 1){
-                    *(((unsigned short int*)board) + i*DIM + j) = 255; /* board[i][j] = true, the cell is alive */
-                }else{
-                    *(((unsigned short int*)board) + i*DIM + j) = 0; /* board[i][j] = false, the cell is dead */
-                }
-            }
-        }
-        if(s % SAVE == 0){
-            save_snap(board, DIM, MAXVAL, s);
-        }
-    }
-}
-
 int top_block(const int RANK){
     return RANK < NPCOLS ? (NPROWS-1)*NPCOLS + RANK : RANK - NPCOLS;
 }
@@ -188,18 +167,10 @@ int btm_right_blk(const int RANK){
     return RANK%NPCOLS == NPCOLS-1 ? bottom_block(RANK) - NPCOLS+1 : bottom_block(RANK) + 1;
 }
 
-/* Evolves the whole board once. 
- * The evolution is static, meaning the evaluation of the board is disentangled from the update. 
- */
-void evolution_static(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK, int* evo_T, int* avg_propT){
-    /* Options:
-     * - save list of cells to modify;
-     * - mark cells to be modified;
-     * */
-    
+unsigned char* initialization_MPI(const int DIM, const int NUM_PROC, void* board, int* BLOCKROWS, int* BLOCKCOLS, int* disps, int* counts, MPI_Datatype blocktype){
     /* partition grid into blocks and scatter them through the processes*/
-    const int BLOCKROWS = DIM/NPROWS; /* number of rows and columns in a block */
-    const int BLOCKCOLS = DIM/NPCOLS; /* number of rows and columns in a block */
+    *BLOCKROWS = DIM/NPROWS;
+    *BLOCKCOLS = DIM/NPCOLS;
 
     if(NUM_PROC != NPROWS*NPCOLS){
         fprintf(stderr,"Error: number of PEs %d != %d x %d\n", NUM_PROC, NPROWS, NPCOLS);
@@ -207,52 +178,31 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
         exit(-1);
     }
 
-    unsigned char block[BLOCKROWS*BLOCKCOLS];
-    for (int ii=0; ii<BLOCKROWS*BLOCKCOLS; ii++) block[ii] = 0;
+    unsigned char block[(*BLOCKROWS)*(*BLOCKCOLS)];
+    for (int ii=0; ii<(*BLOCKROWS)*(*BLOCKCOLS); ii++) block[ii] = 0;
 
-    MPI_Datatype blocktype;
     MPI_Datatype blocktype2;
 
-    MPI_Type_vector(BLOCKROWS, BLOCKCOLS, DIM, MPI_UNSIGNED_CHAR, &blocktype2);
+    MPI_Type_vector(*BLOCKROWS, *BLOCKCOLS, DIM, MPI_UNSIGNED_CHAR, &blocktype2);
     MPI_Type_create_resized( blocktype2, 0, sizeof(char), &blocktype);
     MPI_Type_commit(&blocktype);
 
-    int disps[NPROWS*NPCOLS];
-    int counts[NPROWS*NPCOLS];
     for (int ii=0; ii<NPROWS; ii++) {
         for (int jj=0; jj<NPCOLS; jj++) {
-            disps[ii*NPCOLS+jj] = ii*DIM*BLOCKROWS+jj*BLOCKCOLS;
+            disps[ii*NPCOLS+jj] = ii*DIM*(*BLOCKROWS)+jj*(*BLOCKCOLS);
             counts [ii*NPCOLS+jj] = 1;
         }
     }
 
-    MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(board, counts, disps, blocktype, block, (*BLOCKROWS)*(*BLOCKCOLS), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    MPI_Status status;
-    unsigned char btm_row[BLOCKCOLS];
-    unsigned char top_row[BLOCKCOLS];
-    unsigned char left_clmn[BLOCKROWS];
-    unsigned char right_clmn[BLOCKROWS];
-    unsigned char temp[BLOCKROWS];
-    unsigned char top_left, top_right, btm_left, btm_right;
+    return block;
+}
 
-    for (int ii=0; ii<BLOCKCOLS; ii++) btm_row[ii] = 0;
-    for (int ii=0; ii<BLOCKCOLS; ii++) top_row[ii] = 0;
-    for (int ii=0; ii<BLOCKROWS; ii++) left_clmn[ii] = 0;
-    for (int ii=0; ii<BLOCKROWS; ii++) right_clmn[ii] = 0;
-
-    double tbegin, tend, tpstart, tpend;
-    int tevo[2]={0,0}, tprop=0;
-    if(RANK == 0) tbegin = MPI_Wtime();
-
-    /* evolution */
-    for(int s=0; s<STEPS; s++){
-
-        if(RANK == 0) tpstart = MPI_Wtime();
-
-        /* propagate rows */
+void propagation_MPI(const int RANK, const int BLOCKROWS, const int BLOCKCOLS, unsigned char* block, unsigned char* btm_row, unsigned char* top_row, unsigned char* left_clmn, unsigned char* right_clmn, 
+                     unsigned char* btm_right, unsigned char* btm_left, unsigned char* top_right, unsigned char* top_left){
+    /* propagate rows */
         if((RANK/NPCOLS)%2 == 0){
-            
             /* send top row */
             MPI_Send(block, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD);
             MPI_Recv(btm_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD, &status);
@@ -293,21 +243,196 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             MPI_Send(block + NPCOLS*(NPROWS-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD);
             MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
 
-            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
         }else{
-            MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
 
             MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD);
             MPI_Send(block + NPCOLS-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD);
             MPI_Send(block + NPCOLS*(NPROWS-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD);
             MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
         }
+}
+
+void save_status(const int index, const int SAVE, const int RANK, const int DIM, const int MAXVAL, unsigned char* block, const int BLOCKROWS, const int BLOCKCOLS, void* board, const int counts, const int disps, MPI_Datatype blocktype){
+    if(index % SAVE == 0){
+        MPI_Gatherv(block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD); 
+        
+        if(RANK == 0) save_snap(board, DIM, MAXVAL, index);
+
+        MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    }
+}
+
+/* Evolves the whole board. 
+ * The evolution is ordered, meaning by row and from the top left cell.
+ */
+void evolution_ordered(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK, int* evo_T, int* avg_propT){
+    /* partition grid into blocks and scatter them through the processes*/
+    int BLOCKROWS; /* number of rows in a block */
+    int BLOCKCOLS; /* number of columns in a block */
+    int disps[NPROWS*NPCOLS];
+    int counts[NPROWS*NPCOLS];
+    MPI_Datatype blocktype;
+
+    unsigned char *block = initialization_MPI(DIM, NUM_PROC, board, &BLOCKROWS, &BLOCKCOLS, disps, counts, blocktype);
+
+    MPI_Status status;
+    unsigned char btm_row[BLOCKCOLS];
+    unsigned char top_row[BLOCKCOLS];
+    unsigned char left_clmn[BLOCKROWS];
+    unsigned char right_clmn[BLOCKROWS];
+    unsigned char temp[BLOCKROWS];
+    unsigned char top_left, top_right, btm_left, btm_right;
+
+    for (int ii=0; ii<BLOCKCOLS; ii++) btm_row[ii] = 0;
+    for (int ii=0; ii<BLOCKCOLS; ii++) top_row[ii] = 0;
+    for (int ii=0; ii<BLOCKROWS; ii++) left_clmn[ii] = 0;
+    for (int ii=0; ii<BLOCKROWS; ii++) right_clmn[ii] = 0;
+
+    double tbegin, tend, tpstart, tpend;
+    int tevo[2]={0,0}, tprop=0;
+    if(RANK == 0) tbegin = MPI_Wtime();
+
+    for(int s=0; s<STEPS; s++){
+
+        if(RANK == 0) tpstart = MPI_Wtime();
+
+        propagation_MPI(RANK, BLOCKROWS, BLOCKCOLS, block, btm_row, top_row, left_clmn, right_clmn, &btm_right, &btm_left, &top_right, &top_left);
+
+        if(RANK == 0){
+            tpend = MPI_Wtime();
+            tprop += get_time(tpstart, tpend);
+        }
+
+        for(int i=0; i<DIM; i++){
+            for(int j=0; j<DIM; j++){
+                if(check_neighbours_ord(board, DIM, i, j) == 1){
+                    *(((unsigned short int*)board) + i*DIM + j) = 255; /* board[i][j] = true, the cell is alive */
+                }else{
+                    *(((unsigned short int*)board) + i*DIM + j) = 0; /* board[i][j] = false, the cell is dead */
+                }
+            }
+        }
+
+        save_status(s, SAVE, RANK, DIM, MAXVAL, block, BLOCKROWS, BLOCKCOLS, board, counts, disps, blocktype);
+        // if(s % SAVE == 0){
+        //     save_snap(board, DIM, MAXVAL, s);
+        // }
+    }
+    if(RANK == 0){
+        tend = MPI_Wtime();
+        *evo_T = get_time(tbegin, tend);
+        *avg_propT = (int)tprop/STEPS;
+    }
+}
+
+/* Evolves the whole board. 
+ * The evolution is static, meaning the evaluation of the board is disentangled from the update. 
+ */
+void evolution_static(void* board, const int DIM, const int STEPS, const int MAXVAL, const int SAVE, const int NUM_PROC, const int RANK, int* evo_T, int* avg_propT){
+    /* Options:
+     * - save list of cells to modify;
+     * - mark cells to be modified;
+     * */
+    
+    /* partition grid into blocks and scatter them through the processes*/
+    int BLOCKROWS; /* number of rows in a block */
+    int BLOCKCOLS; /* number of columns in a block */
+    int disps[NPROWS*NPCOLS];
+    int counts[NPROWS*NPCOLS];
+    MPI_Datatype blocktype;
+
+    unsigned char *block = initialization_MPI(DIM, NUM_PROC, board, &BLOCKROWS, &BLOCKCOLS, disps, counts, blocktype);
+
+    MPI_Status status;
+    unsigned char btm_row[BLOCKCOLS];
+    unsigned char top_row[BLOCKCOLS];
+    unsigned char left_clmn[BLOCKROWS];
+    unsigned char right_clmn[BLOCKROWS];
+    unsigned char temp[BLOCKROWS];
+    unsigned char top_left, top_right, btm_left, btm_right;
+
+    for (int ii=0; ii<BLOCKCOLS; ii++) btm_row[ii] = 0;
+    for (int ii=0; ii<BLOCKCOLS; ii++) top_row[ii] = 0;
+    for (int ii=0; ii<BLOCKROWS; ii++) left_clmn[ii] = 0;
+    for (int ii=0; ii<BLOCKROWS; ii++) right_clmn[ii] = 0;
+
+    double tbegin, tend, tpstart, tpend;
+    int tevo[2]={0,0}, tprop=0;
+    if(RANK == 0) tbegin = MPI_Wtime();
+
+    /* evolution */
+    for(int s=0; s<STEPS; s++){
+
+        if(RANK == 0) tpstart = MPI_Wtime();
+
+        propagation_MPI(RANK, BLOCKROWS, BLOCKCOLS, block, btm_row, top_row, left_clmn, right_clmn, &btm_right, &btm_left, &top_right, &top_left);
+
+        // /* propagate rows */
+        // if((RANK/NPCOLS)%2 == 0){
+            
+        //     /* send top row */
+        //     MPI_Send(block, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Recv(btm_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD, &status);
+        //     /* send bottom row */
+        //     MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Recv(top_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD, &status);
+        // }else{
+        //     MPI_Recv(btm_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Send(block, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD);
+
+        //     MPI_Recv(top_row, BLOCKCOLS, MPI_UNSIGNED_CHAR, top_block(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Send(block + (BLOCKCOLS*(BLOCKROWS-1)), BLOCKCOLS, MPI_UNSIGNED_CHAR, bottom_block(RANK), 0, MPI_COMM_WORLD);
+        // }
+        // /* propagate coloumns */
+        // if((RANK%NPCOLS)%2 == 0){
+        //     /* send right coloumn */
+        //     for(int i=1; i<=BLOCKROWS; i++) temp[i-1] = block[i*BLOCKROWS - 1];
+        //     MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, right_block(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Recv(left_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
+        //     /* send left coloumn */
+        //     for(int i=0; i<BLOCKROWS; i++) temp[i] = block[i*BLOCKROWS];
+        //     MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Recv(right_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
+        // }else{
+        //     MPI_Recv(left_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
+        //     for(int i=1; i<=BLOCKROWS; i++) temp[i-1] = block[i*BLOCKROWS - 1];
+        //     MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, right_block(RANK), 0, MPI_COMM_WORLD);
+
+        //     MPI_Recv(right_clmn, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD, &status);
+        //     for(int i=0; i<BLOCKROWS; i++) temp[i] = block[i*BLOCKROWS];
+        //     MPI_Send(temp, BLOCKROWS, MPI_UNSIGNED_CHAR, left_block(RANK), 0, MPI_COMM_WORLD);
+        // }
+
+        // /* propagate corners in diagonal */
+        // if( (RANK/NPCOLS)%2 == 0 ){   /* blocks in even rows send first */
+        //     MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Send(block + NPCOLS-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Send(block + NPCOLS*(NPROWS-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
+
+        //     MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+        // }else{
+        //     MPI_Recv(&btm_right, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Recv(&btm_left, 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Recv(&top_right, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD, &status);
+        //     MPI_Recv(&top_left, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD, &status);
+
+        //     MPI_Send(block, 1, MPI_UNSIGNED_CHAR, top_left_blk(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Send(block + NPCOLS-1, 1, MPI_UNSIGNED_CHAR, top_right_blk(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Send(block + NPCOLS*(NPROWS-1), 1, MPI_UNSIGNED_CHAR, btm_left_blk(RANK), 0, MPI_COMM_WORLD);
+        //     MPI_Send(block + NPCOLS*NPROWS - 1, 1, MPI_UNSIGNED_CHAR, btm_right_blk(RANK), 0, MPI_COMM_WORLD);
+        // }
 
         if(RANK == 0){
             tpend = MPI_Wtime();
@@ -337,13 +462,14 @@ void evolution_static(void* board, const int DIM, const int STEPS, const int MAX
             }
         }
 
-        if(s % SAVE == 0){
-            MPI_Gatherv(block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD); 
+        save_status(s, SAVE, RANK, DIM, MAXVAL, block, BLOCKROWS, BLOCKCOLS, board, counts, disps, blocktype);
+        // if(s % SAVE == 0){
+        //     MPI_Gatherv(block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, board, counts, disps, blocktype, 0, MPI_COMM_WORLD); 
             
-            if(RANK == 0) save_snap(board, DIM, MAXVAL, s);
+        //     if(RANK == 0) save_snap(board, DIM, MAXVAL, s);
 
-            MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
-        }
+        //     MPI_Scatterv(board, counts, disps, blocktype, block, BLOCKROWS*BLOCKCOLS, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+        // }
     }
     if(RANK == 0){
         tend = MPI_Wtime();
